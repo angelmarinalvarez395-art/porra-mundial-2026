@@ -1168,8 +1168,8 @@ function initMyPorra() {
   const toast     = document.getElementById('form-toast');
   const toastMsg  = document.getElementById('toast-msg');
 
-  // Soft-lock: if the user already has a saved porra, lock the name field
-  const savedName = localStorage.getItem('porra26-mi-nombre');
+  // Soft-lock: only lock if user has actually submitted a porra (not just searched in Mi Porra)
+  const savedName = localStorage.getItem('porra26-guardada');
   if (savedName) {
     nameInput.value    = savedName;
     nameInput.readOnly = true;
@@ -1227,6 +1227,7 @@ function initMyPorra() {
 
     await saveEntry(entry);
     localStorage.setItem('porra26-mi-nombre', entry.nombre);
+    localStorage.setItem('porra26-guardada', entry.nombre);
     form.reset();
     document.getElementById('clasificacion').scrollIntoView({ behavior:'smooth', block:'start' });
   });
