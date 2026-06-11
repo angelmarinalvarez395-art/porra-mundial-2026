@@ -247,23 +247,32 @@ function initFirebaseListeners() {
     const raw = snap.val() ?? {};
     _entries = Object.values(raw);
     renderLeaderboard();
+    const mpN = document.getElementById('mp-nombre')?.value.trim();
+    if (mpN && document.getElementById('mp-content')?.children.length) renderMyPorra(mpN);
   });
 
   REF.actual_gs.on('value', snap => {
     _actualGS = snap.val() ?? {};
     renderLeaderboard();
+    renderLiveGroups();
+    renderLiveBracket();
     if (isAdmin) renderAdminGS();
   });
 
   REF.actual_ko.on('value', snap => {
     _actualKO = snap.val() ?? {};
     renderLeaderboard();
+    renderLiveBracket();
+    const mpN = document.getElementById('mp-nombre')?.value.trim();
+    if (mpN && document.getElementById('mp-content')?.children.length) renderMyPorra(mpN);
     if (isAdmin) renderAdminKO();
   });
 
   REF.actual_bonus.on('value', snap => {
     _actualBonus = snap.val();
     renderLeaderboard();
+    const mpN = document.getElementById('mp-nombre')?.value.trim();
+    if (mpN && document.getElementById('mp-content')?.children.length) renderMyPorra(mpN);
     if (isAdmin) populateAdminBonus();
   });
 }
@@ -752,6 +761,359 @@ function safeText(str) {
 function escStr(str) { return str.replace(/"/g, '&quot;'); }
 
 /* ====================================================
+   RESULTADOS EN VIVO — Clasificación de grupos
+   ==================================================== */
+let _liveGroupsReady = false;
+
+function renderLiveGroups() {
+  const tabNav = document.getElementById('live-group-tabs');
+  const panels = document.getElementById('live-group-panels');
+  if (!tabNav || !panels) return;
+
+  const groupKeys = Object.keys(GROUPS);
+
+  if (!_liveGroupsReady) {
+    _liveGroupsReady = true;
+    tabNav.innerHTML = groupKeys.map((k, i) =>
+      `<button class="phase-tab" role="tab" aria-selected="${i===0}" data-live-group="${k}">Grupo ${k}</button>`
+    ).join('');
+
+    panels.innerHTML = groupKeys.map((k, i) =>
+      `<div id="livepanel-${k}" role="tabpanel" ${i !== 0 ? 'hidden' : ''}>
+        <div class="standings">
+          <div class="standings__head">Clasificación Grupo ${k}</div>
+          <table aria-label="Clasificación real del Grupo ${k}">
+            <thead>
+              <tr>
+                <th>#</th><th style="text-align:left">Equipo</th>
+                <th title="Partidos jugados">PJ</th>
+                <th title="Victorias">V</th>
+                <th title="Empates">E</th>
+                <th title="Derrotas">D</th>
+                <th title="Diferencia de goles">DG</th>
+                <th title="Puntos">Pts</th>
+              </tr>
+            </thead>
+            <tbody id="live-st-${k}"></tbody>
+          </table>
+        </div>
+      </div>`
+    ).join('');
+
+    tabNav.addEventListener('click', e => {
+      const tab = e.target.closest('.phase-tab[data-live-group]');
+      if (!tab) return;
+      tabNav.querySelectorAll('.phase-tab').forEach(t => t.setAttribute('aria-selected','false'));
+      tab.setAttribute('aria-selected','true');
+      panels.querySelectorAll('[role="tabpanel"]').forEach(p => p.hidden = true);
+      document.getElementById(`livepanel-${tab.dataset.liveGroup}`).hidden = false;
+    });
+  }
+
+  groupKeys.forEach(k => {
+    const tbody = document.getElementById(`live-st-${k}`);
+    if (tbody) tbody.innerHTML = renderStandingsRows(calcStandings(k, _actualGS));
+  });
+}
+
+/* ====================================================
+   RESULTADOS EN VIVO — Cuadro eliminatorio
+   ==================================================== */
+let _liveBracketReady = false;
+
+function resolveLiveSlot(slot, qualifiers, best3) {
+  if (!slot) return null;
+  const isLoser = slot.endsWith('-L');
+  const matchId = isLoser ? slot.slice(0, -2) : slot;
+
+  if (/^[12][A-L]$/.test(matchId)) {
+    const t = qualifiers[matchId];
+    return t ? `${t.f} ${t.n}` : null;
+  }
+  if (/^3-\d+$/.test(matchId)) {
+    const idx = parseInt(matchId.split('-')[1], 10) - 1;
+    const t = best3[idx];
+    return t ? `${t.f} ${t.n}` : null;
+  }
+
+  const actual = _actualKO[matchId];
+  if (!actual?.team) return null;
+  if (!isLoser) return actual.team;
+
+  // Para slot de perdedor: buscar el equipo que no ganó ese partido
+  for (const round of Object.values(ROUNDS)) {
+    const m = round.matches.find(x => x.id === matchId);
+    if (!m) continue;
+    const h = m.h ? resolveLiveSlot(m.h, qualifiers, best3) : resolveLiveSlot(m.p1, qualifiers, best3);
+    const a = m.a ? resolveLiveSlot(m.a, qualifiers, best3) : resolveLiveSlot(m.p2, qualifiers, best3);
+    const stripFlag = s => s ? s.replace(/^\S+\s/, '').trim() : s;
+    if (h && normalize(stripFlag(h) || h) === normalize(actual.team)) return a;
+    if (a && normalize(stripFlag(a) || a) === normalize(actual.team)) return h;
+    return null;
+  }
+  return null;
+}
+
+function renderLiveBracketMatch(m, roundKey, qualifiers, best3) {
+  let teamH, teamA;
+  if (m.h && m.a) {
+    teamH = resolveLiveSlot(m.h, qualifiers, best3);
+    teamA = resolveLiveSlot(m.a, qualifiers, best3);
+  } else {
+    teamH = m.p1 ? resolveLiveSlot(m.p1, qualifiers, best3) : null;
+    teamA = m.p2 ? resolveLiveSlot(m.p2, qualifiers, best3) : null;
+  }
+
+  const actual  = _actualKO[m.id];
+  const winner  = actual?.team;
+  const sh      = actual?.sh;
+  const sa      = actual?.sa;
+
+  const hDisplay = teamH ?? (m.h || m.p1 || '?');
+  const aDisplay = teamA ?? (m.a || m.p2 || '?');
+  const stripFlag = s => s ? s.replace(/^\S+\s/, '').trim() : s;
+  const hWins = winner && teamH && normalize(winner) === normalize(stripFlag(teamH) || teamH);
+  const aWins = winner && teamA && normalize(winner) === normalize(stripFlag(teamA) || teamA);
+
+  return `
+    <div class="ko-match${winner ? ' has-pick' : ''}">
+      <div class="ko-match__teams">
+        <button class="ko-pick${hWins ? ' is-winner' : ''}${(winner && !hWins) ? ' is-loser' : ''}"
+          disabled aria-label="${escStr(hDisplay)}">${safeText(hDisplay)}</button>
+        <div class="ko-match__mid">
+          <span class="ko-vs">VS</span>
+          <div class="ko-score-row">
+            <span class="live-score">${winner ? (sh ?? '?') : '?'}</span>
+            <span class="score-sep">–</span>
+            <span class="live-score">${winner ? (sa ?? '?') : '?'}</span>
+          </div>
+        </div>
+        <button class="ko-pick ko-pick--away${aWins ? ' is-winner' : ''}${(winner && !aWins) ? ' is-loser' : ''}"
+          disabled aria-label="${escStr(aDisplay)}">${safeText(aDisplay)}</button>
+      </div>
+      ${m.date ? `<div class="ko-match__date">📅 ${formatDate(m.date)}${m.city ? ' · ' + m.city : ''}</div>` : ''}
+      <div class="ko-match__label">${ROUNDS[roundKey].label} · ${m.id.toUpperCase()}</div>
+    </div>`;
+}
+
+function renderLiveBracket() {
+  const container = document.getElementById('live-bracket');
+  if (!container) return;
+
+  if (!_liveBracketReady) {
+    _liveBracketReady = true;
+
+    const tabNav = document.createElement('nav');
+    tabNav.className = 'phase-tabs';
+    tabNav.id = 'live-ko-tabs';
+    tabNav.setAttribute('role', 'tablist');
+    tabNav.setAttribute('aria-label', 'Rondas eliminatorias (resultados reales)');
+    tabNav.innerHTML = KO_ORDER.map((k, i) =>
+      `<button class="phase-tab" role="tab" aria-selected="${i===0}" data-live-round="${k}">${ROUNDS[k].label}</button>`
+    ).join('');
+    container.appendChild(tabNav);
+
+    const panelsDiv = document.createElement('div');
+    panelsDiv.id = 'live-ko-panels';
+    KO_ORDER.forEach((k, i) => {
+      const p = document.createElement('div');
+      p.id = `live-kopanel-${k}`;
+      p.setAttribute('role', 'tabpanel');
+      if (i !== 0) p.hidden = true;
+      panelsDiv.appendChild(p);
+    });
+    container.appendChild(panelsDiv);
+
+    tabNav.addEventListener('click', e => {
+      const tab = e.target.closest('.phase-tab[data-live-round]');
+      if (!tab) return;
+      tabNav.querySelectorAll('.phase-tab').forEach(t => t.setAttribute('aria-selected','false'));
+      tab.setAttribute('aria-selected','true');
+      panelsDiv.querySelectorAll('[role="tabpanel"]').forEach(p => p.hidden = true);
+      document.getElementById(`live-kopanel-${tab.dataset.liveRound}`).hidden = false;
+    });
+  }
+
+  const allStandings = getAllStandings(_actualGS);
+  const qualifiers   = getQualifiers(allStandings);
+  const best3        = getBest3rds(allStandings);
+
+  KO_ORDER.forEach(roundKey => {
+    const panel = document.getElementById(`live-kopanel-${roundKey}`);
+    if (!panel) return;
+    panel.innerHTML = `<div class="ko-round">${
+      ROUNDS[roundKey].matches.map(m => renderLiveBracketMatch(m, roundKey, qualifiers, best3)).join('')
+    }</div>`;
+  });
+}
+
+function initLiveSection() {
+  const mainTabs = document.getElementById('live-main-tabs');
+  if (!mainTabs) return;
+
+  mainTabs.addEventListener('click', e => {
+    const tab = e.target.closest('.phase-tab[data-live-tab]');
+    if (!tab) return;
+    mainTabs.querySelectorAll('.phase-tab').forEach(t => t.setAttribute('aria-selected','false'));
+    tab.setAttribute('aria-selected','true');
+    document.getElementById('live-grupos').hidden = tab.dataset.liveTab !== 'live-grupos';
+    document.getElementById('live-elim').hidden   = tab.dataset.liveTab !== 'live-elim';
+  });
+
+  renderLiveGroups();
+  renderLiveBracket();
+}
+
+/* ====================================================
+   MI PORRA — Seguimiento personal de predicciones
+   ==================================================== */
+const BONUS_LABELS = {
+  campeon: 'Campeón 🏆', subcampeon: 'Subcampeón 🥈', tercero: 'Tercer Puesto 🥉',
+  cuarto: 'Cuarto 4️⃣', goleador: 'Goleador ⚽', portero: 'Portero 🧤',
+  mvp: 'MVP ⭐', joven: 'Joven 👶', sorpresa: 'Sorpresa 😲',
+};
+
+function mpStatusIcon(pts, hasReal) {
+  if (!hasReal) return '<span class="mp-icon mp-icon--pending">—</span>';
+  if (pts === 4 || pts === 6) return '<span class="mp-icon mp-icon--ok">✓✓</span>';
+  if (pts > 0) return '<span class="mp-icon mp-icon--ok">✓</span>';
+  return '<span class="mp-icon mp-icon--fail">✗</span>';
+}
+
+function renderMyPorraGS(entry) {
+  const rows = Object.keys(GROUPS).map(gKey => {
+    const matchRows = GROUP_SCHEDULE[gKey].map((sched, mi) => {
+      const key  = `${gKey}-${mi}`;
+      const pred = entry.draftGS?.[key];
+      const real = _actualGS[key];
+      const th   = GROUPS[gKey].teams[sched.pair[0]];
+      const ta   = GROUPS[gKey].teams[sched.pair[1]];
+      const predStr = pred && pred[0] !== '' && pred[1] !== '' ? `${pred[0]}–${pred[1]}` : '—';
+      const realStr = real && real[0] !== '' && real[1] !== '' ? `${real[0]}–${real[1]}` : '—';
+      const pts  = (real && pred) ? calcPtsGroup(pred[0], pred[1], real[0], real[1]) : 0;
+      return `<tr>
+        <td class="mp-match">${th.f} ${th.n} – ${ta.n} ${ta.f}</td>
+        <td class="mp-pred">${predStr}</td>
+        <td class="mp-real">${realStr}</td>
+        <td>${mpStatusIcon(pts, !!real)}</td>
+        <td class="mp-pts">${real && pred ? `+${pts}` : '—'}</td>
+      </tr>`;
+    }).join('');
+    return `<tr class="mp-group-head"><td colspan="5">Grupo ${gKey}</td></tr>${matchRows}`;
+  }).join('');
+
+  return `
+    <div class="mp-section">
+      <h3 class="mp-section-title">⚽ Fase de Grupos</h3>
+      <div class="mp-table-wrap">
+        <table class="mp-table">
+          <thead><tr><th>Partido</th><th>Tu marcador</th><th>Real</th><th></th><th>Pts</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function renderMyPorraKO(entry) {
+  const rows = KO_ORDER.flatMap(roundKey =>
+    ROUNDS[roundKey].matches.map(m => {
+      const pred = entry.draftKO?.[m.id];
+      const real = _actualKO[m.id];
+      const predTeam  = pred?.team ? safeText(pred.team) : '—';
+      const predScore = (pred?.sh !== undefined && pred?.sh !== '') ? ` (${pred.sh}–${pred.sa})` : '';
+      const realTeam  = real?.team ? safeText(real.team) : '—';
+      const realScore = (real?.sh !== undefined && real?.sh !== '') ? ` (${real.sh}–${real.sa})` : '';
+      const pts = real ? calcPtsKO(pred?.team, pred?.sh, pred?.sa, real.team, real.sh, real.sa) : 0;
+      return `<tr>
+        <td class="mp-match">${ROUNDS[roundKey].label}</td>
+        <td class="mp-pred">${predTeam}${predScore}</td>
+        <td class="mp-real">${realTeam}${realScore}</td>
+        <td>${mpStatusIcon(pts, !!real)}</td>
+        <td class="mp-pts">${real ? `+${pts}` : '—'}</td>
+      </tr>`;
+    })
+  ).join('');
+
+  return `
+    <div class="mp-section">
+      <h3 class="mp-section-title">🏆 Fase Eliminatoria</h3>
+      <div class="mp-table-wrap">
+        <table class="mp-table">
+          <thead><tr><th>Ronda</th><th>Tu equipo</th><th>Ganador real</th><th></th><th>Pts</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function renderMyPorraBonus(entry) {
+  const rows = Object.entries(BONUS_POINTS).map(([field, maxPts]) => {
+    const pred    = entry[field] || '';
+    const real    = _actualBonus?.[field] || '';
+    const correct = _actualBonus && pred && normalize(pred) === normalize(real);
+    const pts     = correct ? maxPts : 0;
+    return `<tr>
+      <td class="mp-match">${BONUS_LABELS[field]}</td>
+      <td class="mp-pred">${safeText(pred) || '—'}</td>
+      <td class="mp-real">${safeText(real) || '—'}</td>
+      <td>${mpStatusIcon(pts, !!_actualBonus)}</td>
+      <td class="mp-pts">${_actualBonus ? `+${pts}/${maxPts}` : '—'}</td>
+    </tr>`;
+  }).join('');
+
+  return `
+    <div class="mp-section">
+      <h3 class="mp-section-title">⭐ Bonus Especiales</h3>
+      <div class="mp-table-wrap">
+        <table class="mp-table">
+          <thead><tr><th>Premio</th><th>Tu predicción</th><th>Real</th><th></th><th>Pts</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+function renderMyPorra(nombre) {
+  const content = document.getElementById('mp-content');
+  if (!content) return;
+  const n = (nombre || '').trim();
+  if (!n) { content.innerHTML = ''; return; }
+
+  const entry = _entries.find(e => normalize(e.nombre) === normalize(n));
+  if (!entry) {
+    content.innerHTML = `<p class="mp-msg mp-msg--error">No se encontró ninguna porra con el nombre "<strong>${safeText(n)}</strong>".<br>Comprueba que escribes exactamente el mismo nombre que usaste al guardar.</p>`;
+    return;
+  }
+
+  const totalPts = calcEntryPts(entry);
+  content.innerHTML = `
+    <div class="mp-summary">
+      <span class="mp-summary__name">${safeText(entry.nombre)}</span>
+      <span class="lb-pts">${totalPts} pts</span>
+    </div>
+    ${renderMyPorraGS(entry)}
+    ${renderMyPorraKO(entry)}
+    ${renderMyPorraBonus(entry)}`;
+}
+
+function initMyPorra() {
+  const input  = document.getElementById('mp-nombre');
+  const btn    = document.getElementById('mp-buscar');
+  if (!input || !btn) return;
+
+  const saved = localStorage.getItem('porra26-mi-nombre');
+  if (saved) { input.value = saved; renderMyPorra(saved); }
+
+  btn.addEventListener('click', () => {
+    const n = input.value.trim();
+    if (n) localStorage.setItem('porra26-mi-nombre', n);
+    renderMyPorra(n);
+  });
+
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') btn.click(); });
+}
+
+/* ====================================================
    FORMULARIO DE PARTICIPACIÓN
    ==================================================== */
 (function initForm() {
@@ -801,7 +1163,7 @@ function escStr(str) { return str.replace(/"/g, '&quot;'); }
     }
 
     await saveEntry(entry);
-    // renderLeaderboard se llama automáticamente por el listener de Firebase
+    localStorage.setItem('porra26-mi-nombre', entry.nombre);
     form.reset();
     document.getElementById('clasificacion').scrollIntoView({ behavior:'smooth', block:'start' });
   });
@@ -1030,4 +1392,6 @@ document.getElementById('btn-print')?.addEventListener('click', () => window.pri
    ==================================================== */
 initGroups();
 initKnockout();
+initLiveSection();
+initMyPorra();
 initFirebaseListeners(); // Inicia la sincronización en tiempo real con Firebase

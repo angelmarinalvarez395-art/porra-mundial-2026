@@ -22,6 +22,8 @@
         <li><a href="#bonus">Bonus</a></li>
         <li><a href="#grupos">Grupos</a></li>
         <li><a href="#eliminatorias">Eliminatorias</a></li>
+        <li><a href="#live">Resultados</a></li>
+        <li><a href="#mi-porra">Mi Porra</a></li>
         <li><a href="#participa">Participa</a></li>
         <li><a href="#clasificacion">Clasificación</a></li>
       </ul>
@@ -272,6 +274,42 @@
         </header>
         <nav class="phase-tabs" id="ko-tab-nav" aria-label="Rondas eliminatorias" role="tablist"></nav>
         <div id="ko-panels"></div>
+      </div>
+    </section>
+
+    <!-- ───── RESULTADOS EN VIVO ───── -->
+    <section id="live" class="section" aria-labelledby="live-title">
+      <div class="container">
+        <header class="section-header">
+          <h2 id="live-title" class="section-title">Resultados en Vivo</h2>
+          <p class="section-sub">Clasificación real del torneo · se actualiza automáticamente</p>
+        </header>
+        <nav class="phase-tabs" id="live-main-tabs" aria-label="Vista de resultados en vivo" role="tablist">
+          <button class="phase-tab" role="tab" aria-selected="true" data-live-tab="live-grupos">Grupos</button>
+          <button class="phase-tab" role="tab" aria-selected="false" data-live-tab="live-elim">Eliminatorias</button>
+        </nav>
+        <div id="live-grupos">
+          <nav class="phase-tabs" id="live-group-tabs" aria-label="Grupos del Mundial (resultados reales)" role="tablist"></nav>
+          <div id="live-group-panels"></div>
+        </div>
+        <div id="live-elim" hidden>
+          <div id="live-bracket"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───── MI PORRA ───── -->
+    <section id="mi-porra" class="section section--alt" aria-labelledby="mi-porra-title">
+      <div class="container container--narrow">
+        <header class="section-header">
+          <h2 id="mi-porra-title" class="section-title">Mi Porra</h2>
+          <p class="section-sub">Consulta tus predicciones y tu puntuación actual</p>
+        </header>
+        <div class="mp-search">
+          <input type="text" id="mp-nombre" class="form-input" placeholder="Tu nombre en la porra…" autocomplete="off" aria-label="Nombre con el que guardaste tu porra">
+          <button id="mp-buscar" class="btn btn--secondary">Ver mi porra</button>
+        </div>
+        <div id="mp-content" aria-live="polite"></div>
       </div>
     </section>
 
