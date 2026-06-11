@@ -647,8 +647,9 @@ function onKOPick(btn, koPicks) {
   const rawTeam = btn.dataset.team;
   const team    = rawTeam.replace(/^\S+\s/, '').trim() || rawTeam.trim();
   const hf      = rawTeam.split(' ')[0];
-  koPicks[matchId] = { ...(koPicks[matchId]||{}), team, hf };
-  saveDraftKO(koPicks);
+  const fresh   = getDraftKO(); // always read fresh to avoid stale score loss
+  fresh[matchId] = { ...(fresh[matchId]||{}), team, hf };
+  saveDraftKO(fresh);
   refreshKnockout();
 }
 
@@ -947,18 +948,62 @@ function renderLiveBracket() {
   });
 }
 
-function initLiveSection() {
-  const mainTabs = document.getElementById('live-main-tabs');
-  if (!mainTabs) return;
+function initParticipaSteps() {
+  const tabNav = document.getElementById('participa-tabs');
+  if (!tabNav) return;
 
-  mainTabs.addEventListener('click', e => {
-    const tab = e.target.closest('.phase-tab[data-live-tab]');
-    if (!tab) return;
-    mainTabs.querySelectorAll('.phase-tab').forEach(t => t.setAttribute('aria-selected','false'));
-    tab.setAttribute('aria-selected','true');
-    document.getElementById('live-grupos').hidden = tab.dataset.liveTab !== 'live-grupos';
-    document.getElementById('live-elim').hidden   = tab.dataset.liveTab !== 'live-elim';
+  function activateStep(name) {
+    tabNav.querySelectorAll('.phase-tab').forEach(t =>
+      t.setAttribute('aria-selected', t.dataset.pstep === name ? 'true' : 'false')
+    );
+    ['grupos', 'elim', 'form'].forEach(s => {
+      document.getElementById(`pstep-${s}`).hidden = s !== name;
+    });
+  }
+
+  tabNav.addEventListener('click', e => {
+    const tab = e.target.closest('.phase-tab[data-pstep]');
+    if (tab) activateStep(tab.dataset.pstep);
   });
+
+  document.querySelectorAll('a[data-pstep]').forEach(link => {
+    link.addEventListener('click', () => activateStep(link.dataset.pstep));
+  });
+}
+
+function initPanelTabs() {
+  const tabNav = document.getElementById('panel-tabs');
+  if (!tabNav) return;
+
+  function activatePanel(name) {
+    tabNav.querySelectorAll('.phase-tab').forEach(t =>
+      t.setAttribute('aria-selected', t.dataset.panel === name ? 'true' : 'false')
+    );
+    document.getElementById('panel-live').hidden     = name !== 'live';
+    document.getElementById('panel-mi-porra').hidden = name !== 'mi-porra';
+  }
+
+  tabNav.addEventListener('click', e => {
+    const tab = e.target.closest('.phase-tab[data-panel]');
+    if (tab) activatePanel(tab.dataset.panel);
+  });
+
+  document.querySelectorAll('a[data-open-panel]').forEach(link => {
+    link.addEventListener('click', () => activatePanel(link.dataset.openPanel));
+  });
+
+  // Sub-tabs: Grupos / Eliminatorias dentro del panel de resultados
+  const mainTabs = document.getElementById('live-main-tabs');
+  if (mainTabs) {
+    mainTabs.addEventListener('click', e => {
+      const tab = e.target.closest('.phase-tab[data-live-tab]');
+      if (!tab) return;
+      mainTabs.querySelectorAll('.phase-tab').forEach(t => t.setAttribute('aria-selected','false'));
+      tab.setAttribute('aria-selected','true');
+      document.getElementById('live-grupos').hidden = tab.dataset.liveTab !== 'live-grupos';
+      document.getElementById('live-elim').hidden   = tab.dataset.liveTab !== 'live-elim';
+    });
+  }
 
   renderLiveGroups();
   renderLiveBracket();
@@ -1122,6 +1167,24 @@ function initMyPorra() {
   const nameErr   = document.getElementById('f-nombre-err');
   const toast     = document.getElementById('form-toast');
   const toastMsg  = document.getElementById('toast-msg');
+
+  // Soft-lock: if the user already has a saved porra, lock the name field
+  const savedName = localStorage.getItem('porra26-mi-nombre');
+  if (savedName) {
+    nameInput.value    = savedName;
+    nameInput.readOnly = true;
+    nameInput.classList.add('is-locked');
+    const lockNote = document.createElement('p');
+    lockNote.className = 'form-lock-note';
+    lockNote.textContent = `Editando la porra de `;
+    const strong = document.createElement('strong');
+    strong.textContent = savedName;
+    lockNote.appendChild(strong);
+    lockNote.appendChild(document.createTextNode('. Puedes actualizar tus predicciones.'));
+    nameInput.parentElement.appendChild(lockNote);
+    const submitSpan = form.querySelector('[type="submit"] span:first-child');
+    if (submitSpan) submitSpan.textContent = 'Actualizar mi porra';
+  }
 
   nameInput.addEventListener('input', () => {
     nameInput.classList.remove('is-invalid');
@@ -1392,6 +1455,7 @@ document.getElementById('btn-print')?.addEventListener('click', () => window.pri
    ==================================================== */
 initGroups();
 initKnockout();
-initLiveSection();
+initParticipaSteps();
+initPanelTabs();
 initMyPorra();
 initFirebaseListeners(); // Inicia la sincronización en tiempo real con Firebase

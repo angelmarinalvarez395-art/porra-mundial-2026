@@ -20,11 +20,11 @@
       <ul class="nav__links" id="nav-menu" role="list">
         <li><a href="#reglas">Reglas</a></li>
         <li><a href="#bonus">Bonus</a></li>
-        <li><a href="#grupos">Grupos</a></li>
-        <li><a href="#eliminatorias">Eliminatorias</a></li>
-        <li><a href="#live">Resultados</a></li>
-        <li><a href="#mi-porra">Mi Porra</a></li>
-        <li><a href="#participa">Participa</a></li>
+        <li><a href="#participa" data-pstep="grupos">Grupos</a></li>
+        <li><a href="#participa" data-pstep="elim">Eliminatorias</a></li>
+        <li><a href="#participa" data-pstep="form">Participa</a></li>
+        <li><a href="#panel" data-open-panel="live">Resultados</a></li>
+        <li><a href="#panel" data-open-panel="mi-porra">Mi Porra</a></li>
         <li><a href="#clasificacion">Clasificación</a></li>
       </ul>
       <button
@@ -253,168 +253,172 @@
       </div>
     </section>
 
-    <!-- ───── GRUPOS ───── -->
-    <section id="grupos" class="section" aria-labelledby="grupos-porra-title">
+    <!-- ───── PARTICIPA (grupos + eliminatorias + formulario) ───── -->
+    <section id="participa" class="section" aria-labelledby="participa-title">
       <div class="container">
         <header class="section-header">
-          <h2 id="grupos-porra-title" class="section-title">Fase de Grupos</h2>
-          <p class="section-sub">Predice el marcador de cada partido — la clasificación se recalcula en tiempo real</p>
+          <h2 id="participa-title" class="section-title">Hacer mi Porra</h2>
+          <p class="section-sub">Predice grupos, eliminatorias y bonus · guarda tu porra antes del pitido inicial</p>
         </header>
-        <nav class="phase-tabs" id="group-tab-nav" aria-label="Grupos del Mundial 2026" role="tablist"></nav>
-        <div id="group-panels"></div>
-      </div>
-    </section>
-
-    <!-- ───── ELIMINATORIAS ───── -->
-    <section id="eliminatorias" class="section section--alt" aria-labelledby="ko-title">
-      <div class="container">
-        <header class="section-header">
-          <h2 id="ko-title" class="section-title">Fase Eliminatoria</h2>
-          <p class="section-sub">Haz clic en el equipo que predices como ganador de cada partido</p>
-        </header>
-        <nav class="phase-tabs" id="ko-tab-nav" aria-label="Rondas eliminatorias" role="tablist"></nav>
-        <div id="ko-panels"></div>
-      </div>
-    </section>
-
-    <!-- ───── RESULTADOS EN VIVO ───── -->
-    <section id="live" class="section" aria-labelledby="live-title">
-      <div class="container">
-        <header class="section-header">
-          <h2 id="live-title" class="section-title">Resultados en Vivo</h2>
-          <p class="section-sub">Clasificación real del torneo · se actualiza automáticamente</p>
-        </header>
-        <nav class="phase-tabs" id="live-main-tabs" aria-label="Vista de resultados en vivo" role="tablist">
-          <button class="phase-tab" role="tab" aria-selected="true" data-live-tab="live-grupos">Grupos</button>
-          <button class="phase-tab" role="tab" aria-selected="false" data-live-tab="live-elim">Eliminatorias</button>
+        <nav class="phase-tabs" id="participa-tabs" role="tablist" aria-label="Pasos para hacer la porra">
+          <button class="phase-tab" role="tab" aria-selected="true"  data-pstep="grupos">⚽ Grupos</button>
+          <button class="phase-tab" role="tab" aria-selected="false" data-pstep="elim">🏆 Eliminatorias</button>
+          <button class="phase-tab" role="tab" aria-selected="false" data-pstep="form">📝 Guardar</button>
         </nav>
-        <div id="live-grupos">
-          <nav class="phase-tabs" id="live-group-tabs" aria-label="Grupos del Mundial (resultados reales)" role="tablist"></nav>
-          <div id="live-group-panels"></div>
+
+        <!-- Paso 1: Grupos -->
+        <div id="pstep-grupos" role="tabpanel">
+          <p class="section-sub" style="margin-bottom:1.25rem">Predice el marcador de cada partido — la clasificación se recalcula en tiempo real</p>
+          <nav class="phase-tabs" id="group-tab-nav" aria-label="Grupos del Mundial 2026" role="tablist"></nav>
+          <div id="group-panels"></div>
         </div>
-        <div id="live-elim" hidden>
-          <div id="live-bracket"></div>
+
+        <!-- Paso 2: Eliminatorias -->
+        <div id="pstep-elim" role="tabpanel" hidden>
+          <p class="section-sub" style="margin-bottom:1.25rem">Haz clic en el equipo que predices como ganador de cada partido</p>
+          <nav class="phase-tabs" id="ko-tab-nav" aria-label="Rondas eliminatorias" role="tablist"></nav>
+          <div id="ko-panels"></div>
+        </div>
+
+        <!-- Paso 3: Guardar (formulario + bonus) -->
+        <div id="pstep-form" role="tabpanel" hidden>
+          <div style="max-width:760px;margin:0 auto">
+            <form class="porra-form" id="porra-form" novalidate aria-label="Formulario de porra del Mundial 2026">
+
+              <fieldset class="fieldset">
+                <legend class="fieldset__legend">Participante</legend>
+                <div class="form-group">
+                  <label for="f-nombre" class="form-label">
+                    Tu nombre
+                    <span class="form-required" aria-hidden="true">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="f-nombre"
+                    name="nombre"
+                    class="form-input"
+                    placeholder="Escribe tu nombre o alias"
+                    required
+                    aria-required="true"
+                    aria-describedby="f-nombre-err"
+                    autocomplete="given-name"
+                  >
+                  <span class="form-error" id="f-nombre-err" role="alert"></span>
+                </div>
+              </fieldset>
+
+              <fieldset class="fieldset">
+                <legend class="fieldset__legend">🏆 Bonus Especiales</legend>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="f-campeon" class="form-label">Campeón 🏆</label>
+                    <input type="text" id="f-campeon" name="campeon" class="form-input" placeholder="País campeón" autocomplete="off">
+                  </div>
+                  <div class="form-group">
+                    <label for="f-subcampeon" class="form-label">Subcampeón 🥈</label>
+                    <input type="text" id="f-subcampeon" name="subcampeon" class="form-input" placeholder="País finalista" autocomplete="off">
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="f-tercero" class="form-label">Tercer Puesto 🥉</label>
+                    <input type="text" id="f-tercero" name="tercero" class="form-input" placeholder="País 3.º clasificado" autocomplete="off">
+                  </div>
+                  <div class="form-group">
+                    <label for="f-cuarto" class="form-label">Cuarto Puesto 4️⃣</label>
+                    <input type="text" id="f-cuarto" name="cuarto" class="form-input" placeholder="País 4.º clasificado" autocomplete="off">
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="f-goleador" class="form-label">Máximo Goleador ⚽</label>
+                    <input type="text" id="f-goleador" name="goleador" class="form-input" placeholder="Nombre del jugador" autocomplete="off">
+                  </div>
+                  <div class="form-group">
+                    <label for="f-portero" class="form-label">Portero Menos Goleado 🧤</label>
+                    <input type="text" id="f-portero" name="portero" class="form-input" placeholder="Nombre del portero" autocomplete="off">
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="f-mvp" class="form-label">MVP del Torneo ⭐</label>
+                    <input type="text" id="f-mvp" name="mvp" class="form-input" placeholder="Nombre del jugador" autocomplete="off">
+                  </div>
+                  <div class="form-group">
+                    <label for="f-joven" class="form-label">Mejor Jugador Joven 👶</label>
+                    <input type="text" id="f-joven" name="joven" class="form-input" placeholder="Sub-21" autocomplete="off">
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="f-sorpresa" class="form-label">Equipo Sorpresa a Semifinales 😲</label>
+                  <input type="text" id="f-sorpresa" name="sorpresa" class="form-input" placeholder="¿Qué equipo te sorprenderá?" autocomplete="off">
+                </div>
+              </fieldset>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn--primary">
+                  <span>Guardar porra</span>
+                  <span aria-hidden="true">⚽</span>
+                </button>
+                <button type="button" class="btn btn--secondary" id="btn-print">
+                  <span>Imprimir</span>
+                  <span aria-hidden="true">🖨️</span>
+                </button>
+              </div>
+
+              <div class="form-toast" id="form-toast" role="status" aria-live="polite" hidden>
+                <span aria-hidden="true">✅</span>
+                <p id="toast-msg">Porra guardada con éxito.</p>
+              </div>
+
+            </form>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- ───── MI PORRA ───── -->
-    <section id="mi-porra" class="section section--alt" aria-labelledby="mi-porra-title">
-      <div class="container container--narrow">
+    <!-- ───── PANEL: RESULTADOS EN VIVO / MI PORRA ───── -->
+    <section id="panel" class="section section--alt" aria-labelledby="panel-title">
+      <div class="container">
         <header class="section-header">
-          <h2 id="mi-porra-title" class="section-title">Mi Porra</h2>
-          <p class="section-sub">Consulta tus predicciones y tu puntuación actual</p>
+          <h2 id="panel-title" class="section-title">Seguimiento</h2>
+          <p class="section-sub">Resultados reales y tu porra · actualizados en tiempo real</p>
         </header>
-        <div class="mp-search">
-          <input type="text" id="mp-nombre" class="form-input" placeholder="Tu nombre en la porra…" autocomplete="off" aria-label="Nombre con el que guardaste tu porra">
-          <button id="mp-buscar" class="btn btn--secondary">Ver mi porra</button>
+        <nav class="phase-tabs" id="panel-tabs" role="tablist" aria-label="Vistas de seguimiento">
+          <button class="phase-tab" role="tab" aria-selected="true"  data-panel="live">📊 Resultados en Vivo</button>
+          <button class="phase-tab" role="tab" aria-selected="false" data-panel="mi-porra">🎯 Mi Porra</button>
+        </nav>
+
+        <!-- Panel A: Resultados en Vivo -->
+        <div id="panel-live" role="tabpanel">
+          <nav class="phase-tabs" id="live-main-tabs" aria-label="Vista de resultados en vivo" role="tablist">
+            <button class="phase-tab" role="tab" aria-selected="true"  data-live-tab="live-grupos">Grupos</button>
+            <button class="phase-tab" role="tab" aria-selected="false" data-live-tab="live-elim">Eliminatorias</button>
+          </nav>
+          <div id="live-grupos">
+            <nav class="phase-tabs" id="live-group-tabs" aria-label="Grupos del Mundial (resultados reales)" role="tablist"></nav>
+            <div id="live-group-panels"></div>
+          </div>
+          <div id="live-elim" hidden>
+            <div id="live-bracket"></div>
+          </div>
         </div>
-        <div id="mp-content" aria-live="polite"></div>
-      </div>
-    </section>
 
-    <!-- ───── FORMULARIO ───── -->
-    <section id="participa" class="section" aria-labelledby="form-title">
-      <div class="container container--narrow">
-        <header class="section-header">
-          <h2 id="form-title" class="section-title">Hacer Mi Porra</h2>
-          <p class="section-sub">Registra tus predicciones antes del pitido inicial</p>
-        </header>
-
-        <form class="porra-form" id="porra-form" novalidate aria-label="Formulario de porra del Mundial 2026">
-
-          <fieldset class="fieldset">
-            <legend class="fieldset__legend">Participante</legend>
-            <div class="form-group">
-              <label for="f-nombre" class="form-label">
-                Tu nombre
-                <span class="form-required" aria-hidden="true">*</span>
-              </label>
-              <input
-                type="text"
-                id="f-nombre"
-                name="nombre"
-                class="form-input"
-                placeholder="Escribe tu nombre o alias"
-                required
-                aria-required="true"
-                aria-describedby="f-nombre-err"
-                autocomplete="given-name"
-              >
-              <span class="form-error" id="f-nombre-err" role="alert"></span>
+        <!-- Panel B: Mi Porra -->
+        <div id="panel-mi-porra" role="tabpanel" hidden>
+          <div style="max-width:760px;margin:0 auto">
+            <div class="mp-search">
+              <input type="text" id="mp-nombre" class="form-input" placeholder="Tu nombre en la porra…" autocomplete="off" aria-label="Nombre con el que guardaste tu porra">
+              <button id="mp-buscar" class="btn btn--secondary">Ver mi porra</button>
             </div>
-          </fieldset>
-
-          <fieldset class="fieldset">
-            <legend class="fieldset__legend">🏆 Bonus Especiales</legend>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label for="f-campeon" class="form-label">Campeón 🏆</label>
-                <input type="text" id="f-campeon" name="campeon" class="form-input" placeholder="País campeón" autocomplete="off">
-              </div>
-              <div class="form-group">
-                <label for="f-subcampeon" class="form-label">Subcampeón 🥈</label>
-                <input type="text" id="f-subcampeon" name="subcampeon" class="form-input" placeholder="País finalista" autocomplete="off">
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label for="f-tercero" class="form-label">Tercer Puesto 🥉</label>
-                <input type="text" id="f-tercero" name="tercero" class="form-input" placeholder="País 3.º clasificado" autocomplete="off">
-              </div>
-              <div class="form-group">
-                <label for="f-cuarto" class="form-label">Cuarto Puesto 4️⃣</label>
-                <input type="text" id="f-cuarto" name="cuarto" class="form-input" placeholder="País 4.º clasificado" autocomplete="off">
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label for="f-goleador" class="form-label">Máximo Goleador ⚽</label>
-                <input type="text" id="f-goleador" name="goleador" class="form-input" placeholder="Nombre del jugador" autocomplete="off">
-              </div>
-              <div class="form-group">
-                <label for="f-portero" class="form-label">Portero Menos Goleado 🧤</label>
-                <input type="text" id="f-portero" name="portero" class="form-input" placeholder="Nombre del portero" autocomplete="off">
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label for="f-mvp" class="form-label">MVP del Torneo ⭐</label>
-                <input type="text" id="f-mvp" name="mvp" class="form-input" placeholder="Nombre del jugador" autocomplete="off">
-              </div>
-              <div class="form-group">
-                <label for="f-joven" class="form-label">Mejor Jugador Joven 👶</label>
-                <input type="text" id="f-joven" name="joven" class="form-input" placeholder="Sub-21" autocomplete="off">
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="f-sorpresa" class="form-label">Equipo Sorpresa a Semifinales 😲</label>
-              <input type="text" id="f-sorpresa" name="sorpresa" class="form-input" placeholder="¿Qué equipo te sorprenderá?" autocomplete="off">
-            </div>
-          </fieldset>
-
-          <div class="form-actions">
-            <button type="submit" class="btn btn--primary">
-              <span>Guardar porra</span>
-              <span aria-hidden="true">⚽</span>
-            </button>
-            <button type="button" class="btn btn--secondary" id="btn-print">
-              <span>Imprimir</span>
-              <span aria-hidden="true">🖨️</span>
-            </button>
+            <div id="mp-content" aria-live="polite"></div>
           </div>
-
-          <div class="form-toast" id="form-toast" role="status" aria-live="polite" hidden>
-            <span aria-hidden="true">✅</span>
-            <p id="toast-msg">Porra guardada con éxito.</p>
-          </div>
-
-        </form>
+        </div>
       </div>
     </section>
 
