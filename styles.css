@@ -1092,6 +1092,15 @@ ul { list-style: none; }
 
 .match-row:last-child { border-bottom: none; }
 
+.match-row__date {
+  font-size: 0.7rem;
+  color: var(--c-text-3);
+  flex-shrink: 0;
+  min-width: 3.2rem;
+}
+
+.match-row--done .live-score { border-color: rgba(255 215 0 / 0.3); }
+
 .match-team {
   flex: 1;
   display: flex;

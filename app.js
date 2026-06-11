@@ -766,6 +766,28 @@ function escStr(str) { return str.replace(/"/g, '&quot;'); }
    ==================================================== */
 let _liveGroupsReady = false;
 
+function renderGroupMatchResults(k) {
+  const teams = GROUPS[k].teams;
+  return GROUP_SCHEDULE[k].map((sched, mi) => {
+    const [hi, ai] = sched.pair;
+    const sc = _actualGS[`${k}-${mi}`];
+    const hasResult = sc != null && sc[0] != null && sc[1] != null;
+    const dateStr = new Date(sched.date + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+    const scoreH = hasResult ? safeText(String(sc[0])) : '?';
+    const scoreA = hasResult ? safeText(String(sc[1])) : '?';
+    return `<div class="match-row${hasResult ? ' match-row--done' : ''}">
+      <span class="match-row__date">${safeText(dateStr)}</span>
+      <span class="match-team">${safeText(teams[hi].n)}</span>
+      <span class="match-score">
+        <span class="live-score">${scoreH}</span>
+        <span class="score-sep">–</span>
+        <span class="live-score">${scoreA}</span>
+      </span>
+      <span class="match-team match-team--away">${safeText(teams[ai].n)}</span>
+    </div>`;
+  }).join('');
+}
+
 function renderLiveGroups() {
   const tabNav = document.getElementById('live-group-tabs');
   const panels = document.getElementById('live-group-panels');
@@ -781,6 +803,10 @@ function renderLiveGroups() {
 
     panels.innerHTML = groupKeys.map((k, i) =>
       `<div id="livepanel-${k}" role="tabpanel" ${i !== 0 ? 'hidden' : ''}>
+        <div class="standings">
+          <div class="standings__head">Partidos Grupo ${k}</div>
+          <div id="live-matches-${k}"></div>
+        </div>
         <div class="standings">
           <div class="standings__head">Clasificación Grupo ${k}</div>
           <table aria-label="Clasificación real del Grupo ${k}">
@@ -814,6 +840,8 @@ function renderLiveGroups() {
   groupKeys.forEach(k => {
     const tbody = document.getElementById(`live-st-${k}`);
     if (tbody) tbody.innerHTML = renderStandingsRows(calcStandings(k, _actualGS));
+    const matchesEl = document.getElementById(`live-matches-${k}`);
+    if (matchesEl) matchesEl.innerHTML = renderGroupMatchResults(k);
   });
 }
 
