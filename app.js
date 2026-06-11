@@ -1,0 +1,973 @@
+'use strict';
+
+/* ====================================================
+   DATOS DEL MUNDIAL 2026
+   ==================================================== */
+const WC_KICKOFF = new Date('2026-06-11T13:00:00-06:00'); // México vs Sudáfrica, Azteca
+
+// 12 grupos oficiales del sorteo FIFA 2026
+const GROUPS = {
+  A: { teams: [{ n:'Chequia',            f:'🇨🇿' }, { n:'México',          f:'🇲🇽' }, { n:'Sudáfrica',      f:'🇿🇦' }, { n:'Corea del Sur',   f:'🇰🇷' }] },
+  B: { teams: [{ n:'Bosnia-Herzegovina', f:'🇧🇦' }, { n:'Canadá',          f:'🇨🇦' }, { n:'Catar',          f:'🇶🇦' }, { n:'Suiza',           f:'🇨🇭' }] },
+  C: { teams: [{ n:'Brasil',             f:'🇧🇷' }, { n:'Haití',           f:'🇭🇹' }, { n:'Marruecos',      f:'🇲🇦' }, { n:'Escocia',         f:'🏴󠁧󠁢󠁳󠁣󠁴󠁿' }] },
+  D: { teams: [{ n:'Australia',          f:'🇦🇺' }, { n:'Paraguay',        f:'🇵🇾' }, { n:'Turquía',        f:'🇹🇷' }, { n:'USA',             f:'🇺🇸' }] },
+  E: { teams: [{ n:'Curazao',            f:'🇨🇼' }, { n:'Ecuador',         f:'🇪🇨' }, { n:'Alemania',       f:'🇩🇪' }, { n:'Costa de Marfil', f:'🇨🇮' }] },
+  F: { teams: [{ n:'Japón',              f:'🇯🇵' }, { n:'Países Bajos',    f:'🇳🇱' }, { n:'Suecia',         f:'🇸🇪' }, { n:'Túnez',           f:'🇹🇳' }] },
+  G: { teams: [{ n:'Bélgica',            f:'🇧🇪' }, { n:'Egipto',          f:'🇪🇬' }, { n:'Irán',           f:'🇮🇷' }, { n:'Nueva Zelanda',   f:'🇳🇿' }] },
+  H: { teams: [{ n:'Cabo Verde',         f:'🇨🇻' }, { n:'Arabia Saudí',    f:'🇸🇦' }, { n:'España',         f:'🇪🇸' }, { n:'Uruguay',         f:'🇺🇾' }] },
+  I: { teams: [{ n:'Francia',            f:'🇫🇷' }, { n:'Irak',            f:'🇮🇶' }, { n:'Noruega',        f:'🇳🇴' }, { n:'Senegal',         f:'🇸🇳' }] },
+  J: { teams: [{ n:'Argelia',            f:'🇩🇿' }, { n:'Argentina',       f:'🇦🇷' }, { n:'Austria',        f:'🇦🇹' }, { n:'Jordania',        f:'🇯🇴' }] },
+  K: { teams: [{ n:'Colombia',           f:'🇨🇴' }, { n:'R.D. Congo',      f:'🇨🇩' }, { n:'Portugal',       f:'🇵🇹' }, { n:'Uzbekistán',      f:'🇺🇿' }] },
+  L: { teams: [{ n:'Croacia',            f:'🇭🇷' }, { n:'Inglaterra',      f:'🏴󠁧󠁢󠁥󠁮󠁧󠁿' }, { n:'Ghana',          f:'🇬🇭' }, { n:'Panamá',          f:'🇵🇦' }] },
+};
+
+// Calendario oficial de partidos por grupo (pair = [idxLocal, idxVisitante])
+// Fechas y horas verificadas contra el calendario FIFA 2026
+const GROUP_SCHEDULE = {
+  A: [ // Chequia(0) México(1) Sudáfrica(2) Corea del Sur(3)
+    { pair:[1,2], date:'2026-06-11', time:'13:00', tz:'MX',  city:'Ciudad de México (Azteca)' },
+    { pair:[0,3], date:'2026-06-11', time:'20:00', tz:'MX',  city:'Guadalajara (Akron)' },
+    { pair:[0,1], date:'2026-06-15', time:'12:00', tz:'ET',  city:'Atlanta (Mercedes-Benz)' },
+    { pair:[2,3], date:'2026-06-15', time:'15:00', tz:'ET',  city:'Seattle (Lumen Field)' },
+    { pair:[0,2], date:'2026-06-18', time:'12:00', tz:'ET',  city:'Atlanta (Mercedes-Benz)' },
+    { pair:[1,3], date:'2026-06-18', time:'21:00', tz:'MX',  city:'Guadalajara (Akron)' },
+  ],
+  B: [ // Bosnia-H(0) Canadá(1) Catar(2) Suiza(3)
+    { pair:[0,1], date:'2026-06-12', time:'19:00', tz:'ET',  city:'Toronto (BMO Field)' },
+    { pair:[2,3], date:'2026-06-13', time:'12:00', tz:'PT',  city:'San Francisco (Levi\'s)' },
+    { pair:[0,3], date:'2026-06-18', time:'12:00', tz:'PT',  city:'Los Ángeles (SoFi)' },
+    { pair:[1,2], date:'2026-06-18', time:'15:00', tz:'PT',  city:'Vancouver (BC Place)' },
+    { pair:[1,3], date:'2026-06-24', time:'15:00', tz:'ET',  city:'Vancouver (BC Place)' },
+    { pair:[0,2], date:'2026-06-24', time:'15:00', tz:'ET',  city:'Seattle (Lumen Field)' },
+  ],
+  C: [ // Brasil(0) Haití(1) Marruecos(2) Escocia(3)
+    { pair:[0,2], date:'2026-06-13', time:'18:00', tz:'ET',  city:'Nueva York (MetLife)' },
+    { pair:[1,3], date:'2026-06-13', time:'21:00', tz:'ET',  city:'Boston (Gillette)' },
+    { pair:[2,3], date:'2026-06-19', time:'18:00', tz:'ET',  city:'Boston (Gillette)' },
+    { pair:[0,1], date:'2026-06-19', time:'21:00', tz:'ET',  city:'Philadelphia (Lincoln)' },
+    { pair:[0,3], date:'2026-06-24', time:'18:00', tz:'ET',  city:'Miami (Hard Rock)' },
+    { pair:[1,2], date:'2026-06-24', time:'18:00', tz:'ET',  city:'Atlanta (Mercedes-Benz)' },
+  ],
+  D: [ // Australia(0) Paraguay(1) Turquía(2) USA(3)
+    { pair:[1,3], date:'2026-06-12', time:'18:00', tz:'PT',  city:'Los Ángeles (SoFi)' },
+    { pair:[0,2], date:'2026-06-13', time:'15:00', tz:'ET',  city:'Houston (NRG)' },
+    { pair:[0,3], date:'2026-06-19', time:'12:00', tz:'PT',  city:'Seattle (Lumen Field)' },
+    { pair:[1,2], date:'2026-06-19', time:'21:00', tz:'PT',  city:'San Francisco (Levi\'s)' },
+    { pair:[2,3], date:'2026-06-25', time:'22:00', tz:'ET',  city:'Los Ángeles (SoFi)' },
+    { pair:[0,1], date:'2026-06-25', time:'22:00', tz:'ET',  city:'San Francisco (Levi\'s)' },
+  ],
+  E: [ // Curazao(0) Ecuador(1) Alemania(2) Costa de Marfil(3)
+    { pair:[2,0], date:'2026-06-14', time:'13:00', tz:'ET',  city:'Houston (NRG)' },
+    { pair:[1,3], date:'2026-06-14', time:'19:00', tz:'ET',  city:'Philadelphia (Lincoln)' },
+    { pair:[2,3], date:'2026-06-20', time:'16:00', tz:'ET',  city:'Toronto (BMO Field)' },
+    { pair:[0,1], date:'2026-06-20', time:'19:00', tz:'CT',  city:'Kansas City (Arrowhead)' },
+    { pair:[1,2], date:'2026-06-25', time:'16:00', tz:'ET',  city:'Nueva York (MetLife)' },
+    { pair:[0,3], date:'2026-06-25', time:'16:00', tz:'ET',  city:'Philadelphia (Lincoln)' },
+  ],
+  F: [ // Japón(0) Países Bajos(1) Suecia(2) Túnez(3)
+    { pair:[1,0], date:'2026-06-14', time:'16:00', tz:'ET',  city:'Dallas (AT&T)' },
+    { pair:[2,3], date:'2026-06-14', time:'22:00', tz:'ET',  city:'Kansas City (Arrowhead)' },
+    { pair:[1,2], date:'2026-06-20', time:'13:00', tz:'ET',  city:'Houston (NRG)' },
+    { pair:[0,3], date:'2026-06-20', time:'22:00', tz:'MX',  city:'Guadalajara (Akron)' },
+    { pair:[0,2], date:'2026-06-25', time:'19:00', tz:'ET',  city:'Dallas (AT&T)' },
+    { pair:[1,3], date:'2026-06-25', time:'19:00', tz:'CT',  city:'Kansas City (Arrowhead)' },
+  ],
+  G: [ // Bélgica(0) Egipto(1) Irán(2) Nueva Zelanda(3)
+    { pair:[0,1], date:'2026-06-15', time:'15:00', tz:'PT',  city:'Seattle (Lumen Field)' },
+    { pair:[2,3], date:'2026-06-15', time:'21:00', tz:'CT',  city:'Kansas City (Arrowhead)' },
+    { pair:[0,2], date:'2026-06-21', time:'15:00', tz:'PT',  city:'Los Ángeles (SoFi)' },
+    { pair:[1,3], date:'2026-06-21', time:'21:00', tz:'PT',  city:'Vancouver (BC Place)' },
+    { pair:[0,3], date:'2026-06-26', time:'23:00', tz:'ET',  city:'Seattle (Lumen Field)' },
+    { pair:[1,2], date:'2026-06-26', time:'23:00', tz:'PT',  city:'Vancouver (BC Place)' },
+  ],
+  H: [ // Cabo Verde(0) Arabia Saudí(1) España(2) Uruguay(3)
+    { pair:[2,0], date:'2026-06-15', time:'12:00', tz:'ET',  city:'Atlanta (Mercedes-Benz)' },
+    { pair:[1,3], date:'2026-06-15', time:'18:00', tz:'ET',  city:'Boston (Gillette)' },
+    { pair:[2,1], date:'2026-06-21', time:'12:00', tz:'ET',  city:'Atlanta (Mercedes-Benz)' },
+    { pair:[0,3], date:'2026-06-21', time:'18:00', tz:'ET',  city:'Dallas (AT&T)' },
+    { pair:[0,1], date:'2026-06-26', time:'20:00', tz:'ET',  city:'Houston (NRG)' },
+    { pair:[2,3], date:'2026-06-26', time:'20:00', tz:'MX',  city:'Guadalajara (Akron)' },
+  ],
+  I: [ // Francia(0) Irak(1) Noruega(2) Senegal(3)
+    { pair:[0,3], date:'2026-06-16', time:'15:00', tz:'ET',  city:'Philadelphia (Lincoln)' },
+    { pair:[1,2], date:'2026-06-16', time:'18:00', tz:'ET',  city:'Nueva York (MetLife)' },
+    { pair:[0,1], date:'2026-06-22', time:'17:00', tz:'ET',  city:'Philadelphia (Lincoln)' },
+    { pair:[2,3], date:'2026-06-22', time:'20:00', tz:'ET',  city:'Nueva York (MetLife)' },
+    { pair:[0,2], date:'2026-06-26', time:'15:00', tz:'ET',  city:'Boston (Gillette)' },
+    { pair:[1,3], date:'2026-06-26', time:'15:00', tz:'ET',  city:'Toronto (BMO Field)' },
+  ],
+  J: [ // Argelia(0) Argentina(1) Austria(2) Jordania(3)
+    { pair:[1,0], date:'2026-06-16', time:'21:00', tz:'ET',  city:'Houston (NRG)' },
+    { pair:[2,3], date:'2026-06-17', time:'00:00', tz:'ET',  city:'San Francisco (Levi\'s)' },
+    { pair:[1,2], date:'2026-06-22', time:'13:00', tz:'ET',  city:'Dallas (AT&T)' },
+    { pair:[0,3], date:'2026-06-22', time:'23:00', tz:'ET',  city:'San Francisco (Levi\'s)' },
+    { pair:[1,3], date:'2026-06-27', time:'22:00', tz:'ET',  city:'Dallas (AT&T)' },
+    { pair:[0,2], date:'2026-06-27', time:'22:00', tz:'CT',  city:'Kansas City (Arrowhead)' },
+  ],
+  K: [ // Colombia(0) R.D.Congo(1) Portugal(2) Uzbekistán(3)
+    { pair:[2,1], date:'2026-06-17', time:'13:00', tz:'ET',  city:'Houston (NRG)' },
+    { pair:[3,0], date:'2026-06-17', time:'20:00', tz:'MX',  city:'Ciudad de México (Azteca)' },
+    { pair:[2,3], date:'2026-06-23', time:'13:00', tz:'ET',  city:'Houston (NRG)' },
+    { pair:[0,1], date:'2026-06-23', time:'22:00', tz:'MX',  city:'Guadalajara (Akron)' },
+    { pair:[0,2], date:'2026-06-27', time:'19:30', tz:'ET',  city:'Miami (Hard Rock)' },
+    { pair:[1,3], date:'2026-06-27', time:'19:30', tz:'ET',  city:'Atlanta (Mercedes-Benz)' },
+  ],
+  L: [ // Croacia(0) Inglaterra(1) Ghana(2) Panamá(3)
+    { pair:[1,0], date:'2026-06-17', time:'16:00', tz:'ET',  city:'Dallas (AT&T)' },
+    { pair:[2,3], date:'2026-06-17', time:'19:00', tz:'ET',  city:'Toronto (BMO Field)' },
+    { pair:[1,2], date:'2026-06-23', time:'16:00', tz:'ET',  city:'Boston (Gillette)' },
+    { pair:[0,3], date:'2026-06-23', time:'19:00', tz:'ET',  city:'Toronto (BMO Field)' },
+    { pair:[1,3], date:'2026-06-27', time:'17:00', tz:'ET',  city:'Nueva York (MetLife)' },
+    { pair:[0,2], date:'2026-06-27', time:'17:00', tz:'ET',  city:'Philadelphia (Lincoln)' },
+  ],
+};
+
+// Estructura del cuadro eliminatorio
+const ROUNDS = {
+  r32: {
+    label: '32avos de Final',
+    matches: [
+      {id:'r32-0', h:'1A',a:'2B', date:'2026-06-28'}, {id:'r32-1', h:'1C',a:'2D', date:'2026-06-28'},
+      {id:'r32-2', h:'1E',a:'2F', date:'2026-06-29'}, {id:'r32-3', h:'1G',a:'2H', date:'2026-06-29'},
+      {id:'r32-4', h:'1I',a:'2J', date:'2026-06-30'}, {id:'r32-5', h:'1K',a:'2L', date:'2026-06-30'},
+      {id:'r32-6', h:'1B',a:'2A', date:'2026-07-01'}, {id:'r32-7', h:'1D',a:'2C', date:'2026-07-01'},
+      {id:'r32-8', h:'1F',a:'2E', date:'2026-07-02'}, {id:'r32-9', h:'1H',a:'2G', date:'2026-07-02'},
+      {id:'r32-10',h:'1J',a:'2I', date:'2026-07-03'}, {id:'r32-11',h:'1L',a:'2K', date:'2026-07-03'},
+      {id:'r32-12',h:'3-1',a:'3-2', date:'2026-06-28'}, {id:'r32-13',h:'3-3',a:'3-4', date:'2026-06-29'},
+      {id:'r32-14',h:'3-5',a:'3-6', date:'2026-06-30'}, {id:'r32-15',h:'3-7',a:'3-8', date:'2026-07-01'},
+    ],
+  },
+  r16: {
+    label: 'Octavos de Final',
+    matches: [
+      {id:'r16-0',p1:'r32-0', p2:'r32-1',  date:'2026-07-04'},
+      {id:'r16-1',p1:'r32-2', p2:'r32-3',  date:'2026-07-05'},
+      {id:'r16-2',p1:'r32-4', p2:'r32-5',  date:'2026-07-05'},
+      {id:'r16-3',p1:'r32-6', p2:'r32-7',  date:'2026-07-06'},
+      {id:'r16-4',p1:'r32-8', p2:'r32-9',  date:'2026-07-06'},
+      {id:'r16-5',p1:'r32-10',p2:'r32-11', date:'2026-07-07'},
+      {id:'r16-6',p1:'r32-12',p2:'r32-13', date:'2026-07-07'},
+      {id:'r16-7',p1:'r32-14',p2:'r32-15', date:'2026-07-04'},
+    ],
+  },
+  qf: {
+    label: 'Cuartos de Final',
+    matches: [
+      {id:'qf-0',p1:'r16-0',p2:'r16-7', date:'2026-07-09'},
+      {id:'qf-1',p1:'r16-1',p2:'r16-2', date:'2026-07-10'},
+      {id:'qf-2',p1:'r16-3',p2:'r16-4', date:'2026-07-11'},
+      {id:'qf-3',p1:'r16-5',p2:'r16-6', date:'2026-07-11'},
+    ],
+  },
+  sf: {
+    label: 'Semifinales',
+    matches: [
+      {id:'sf-0',p1:'qf-0',p2:'qf-1', date:'2026-07-14', city:'Dallas (AT&T Stadium)'},
+      {id:'sf-1',p1:'qf-2',p2:'qf-3', date:'2026-07-15', city:'Atlanta (Mercedes-Benz Stadium)'},
+    ],
+  },
+  '3rd': {
+    label: '3.er Puesto',
+    matches: [
+      {id:'3rd-0',p1:'sf-0-L',p2:'sf-1-L', date:'2026-07-18', city:'Miami (Hard Rock Stadium)'},
+    ],
+  },
+  final: {
+    label: 'Gran Final 🏆',
+    matches: [
+      {id:'final-0',p1:'sf-0',p2:'sf-1', date:'2026-07-19', city:'Nueva York (MetLife Stadium)'},
+    ],
+  },
+};
+
+const BONUS_POINTS = { campeon:10, subcampeon:6, tercero:4, cuarto:2, goleador:6, portero:4, mvp:6, joven:4, sorpresa:8 };
+
+/* ====================================================
+   ALMACENAMIENTO
+   ==================================================== */
+const SK = {
+  DRAFT_GS:    'porra26-draft-gs',
+  DRAFT_KO:    'porra26-draft-ko',
+  ENTRIES:     'porra26-entries',
+  ACTUAL_GS:   'porra26-actual-gs',
+  ACTUAL_KO:   'porra26-actual-ko',
+  ACTUAL_BONUS:'porra26-actual-bonus',
+};
+
+function load(key, fallback) {
+  try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
+  catch { return fallback; }
+}
+function save(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+function getDraftGS()   { return load(SK.DRAFT_GS, {}); }
+function saveDraftGS(d) { save(SK.DRAFT_GS, d); }
+function getDraftKO()   { return load(SK.DRAFT_KO, {}); }
+function saveDraftKO(d) { save(SK.DRAFT_KO, d); }
+function getEntries()   { return load(SK.ENTRIES, []); }
+function saveEntries(e) { save(SK.ENTRIES, e); }
+function getActualGS()  { return load(SK.ACTUAL_GS, {}); }
+function getActualKO()  { return load(SK.ACTUAL_KO, {}); }
+function getActualBonus(){ return load(SK.ACTUAL_BONUS, null); }
+
+/* ====================================================
+   HELPER: FORMATO FECHA
+   ==================================================== */
+function formatDate(d) {
+  if (!d) return '';
+  return new Date(d + 'T12:00:00').toLocaleDateString('es-ES', {
+    weekday: 'short', day: 'numeric', month: 'short'
+  });
+}
+
+/* ====================================================
+   CLASIFICACIONES DE GRUPO
+   ==================================================== */
+function calcStandings(gKey, gsData) {
+  const teams = GROUPS[gKey].teams.map((t, i) => ({
+    i, n:t.n, f:t.f, pts:0, j:0, g:0, e:0, p:0, gf:0, gc:0, gd:0
+  }));
+
+  GROUP_SCHEDULE[gKey].forEach((sched, mi) => {
+    const key = `${gKey}-${mi}`;
+    const sc  = gsData[key];
+    if (!sc || sc[0] === '' || sc[1] === '') return;
+    const [h, a] = [Number(sc[0]), Number(sc[1])];
+    const [hi, ai] = sched.pair;
+    teams[hi].j++; teams[hi].gf += h; teams[hi].gc += a; teams[hi].gd += h-a;
+    teams[ai].j++; teams[ai].gf += a; teams[ai].gc += h; teams[ai].gd += a-h;
+    if (h > a)       { teams[hi].g++; teams[hi].pts+=3; teams[ai].p++; }
+    else if (h < a)  { teams[ai].g++; teams[ai].pts+=3; teams[hi].p++; }
+    else             { teams[hi].e++; teams[hi].pts++; teams[ai].e++; teams[ai].pts++; }
+  });
+
+  return teams.sort((a,b) => b.pts-a.pts || b.gd-a.gd || b.gf-a.gf || a.n.localeCompare(b.n));
+}
+
+function getAllStandings(gsData) {
+  const all = {};
+  for (const key of Object.keys(GROUPS)) all[key] = calcStandings(key, gsData);
+  return all;
+}
+
+function getQualifiers(standings) {
+  const q = {};
+  for (const [key, st] of Object.entries(standings)) {
+    q[`1${key}`] = st[0];
+    q[`2${key}`] = st[1];
+    q[`3${key}`] = st[2];
+  }
+  return q;
+}
+
+function getBest3rds(standings) {
+  return Object.values(standings)
+    .map(st => st[2])
+    .filter(Boolean)
+    .sort((a,b) => b.pts-a.pts || b.gd-a.gd || b.gf-a.gf || a.n.localeCompare(b.n));
+}
+
+/* ====================================================
+   RESOLUCIÓN DE SLOTS DEL CUADRO
+   ==================================================== */
+function resolveSlot(slot, qualifiers, best3, koPicks) {
+  if (/^[12][A-L]$/.test(slot)) {
+    const t = qualifiers[slot];
+    return t ? `${t.f} ${t.n}` : `${slot[0] === '1' ? '1.º' : '2.º'} Gr. ${slot[1]}`;
+  }
+  if (/^3-\d+$/.test(slot)) {
+    const idx = parseInt(slot.split('-')[1], 10) - 1;
+    const t = best3[idx];
+    return t ? `${t.f} ${t.n}` : `3.º mejor #${idx+1}`;
+  }
+  const isLoser = slot.endsWith('-L');
+  const matchId = isLoser ? slot.slice(0, -2) : slot;
+  const pick = koPicks[matchId];
+  if (!pick) return null;
+  return `${pick.hf||''} ${pick.team}`.trim();
+}
+
+function resolveLoser(matchId, koPicks, qualifiers, best3) {
+  const pick = koPicks[matchId];
+  if (!pick?.team) return null;
+  for (const round of Object.values(ROUNDS)) {
+    const m = round.matches.find(m => m.id === matchId);
+    if (!m) continue;
+    const teamH = m.h ? resolveSlot(m.h, qualifiers, best3, koPicks)
+                     : resolveSlot(m.p1, qualifiers, best3, koPicks);
+    const teamA = m.a ? resolveSlot(m.a, qualifiers, best3, koPicks)
+                     : resolveSlot(m.p2, qualifiers, best3, koPicks);
+    const winnerText = `${pick.hf||''} ${pick.team}`.trim();
+    if (teamH && teamH.trim() === winnerText) return teamA;
+    return teamH;
+  }
+  return null;
+}
+
+/* ====================================================
+   FASE DE GRUPOS — UI
+   ==================================================== */
+function initGroups() {
+  const tabNav   = document.getElementById('group-tab-nav');
+  const panels   = document.getElementById('group-panels');
+  const groupKeys= Object.keys(GROUPS);
+
+  tabNav.innerHTML = groupKeys.map((k, i) =>
+    `<button class="phase-tab" role="tab" aria-selected="${i===0}" data-group="${k}">Grupo ${k}</button>`
+  ).join('');
+
+  panels.innerHTML = groupKeys.map((k, i) =>
+    `<div id="gpanel-${k}" role="tabpanel" ${i !== 0 ? 'hidden' : ''}></div>`
+  ).join('');
+
+  tabNav.addEventListener('click', e => {
+    const tab = e.target.closest('.phase-tab');
+    if (!tab) return;
+    tabNav.querySelectorAll('.phase-tab').forEach(t => t.setAttribute('aria-selected','false'));
+    tab.setAttribute('aria-selected','true');
+    panels.querySelectorAll('[role="tabpanel"]').forEach(p => p.hidden = true);
+    document.getElementById(`gpanel-${tab.dataset.group}`).hidden = false;
+  });
+
+  groupKeys.forEach(k => renderGroupPanel(k));
+}
+
+function renderGroupPanel(gKey) {
+  const container = document.getElementById(`gpanel-${gKey}`);
+  const gsData    = getDraftGS();
+  const standings = calcStandings(gKey, gsData);
+
+  container.innerHTML = `
+    <div class="group-panel">
+      <div>
+        <div class="standings">
+          <div class="standings__head">Clasificación Grupo ${gKey}</div>
+          <table aria-label="Clasificación del Grupo ${gKey}">
+            <thead>
+              <tr>
+                <th>#</th><th style="text-align:left">Equipo</th>
+                <th title="Partidos jugados">PJ</th>
+                <th title="Victorias">V</th>
+                <th title="Empates">E</th>
+                <th title="Derrotas">D</th>
+                <th title="Diferencia de goles">DG</th>
+                <th title="Puntos">Pts</th>
+              </tr>
+            </thead>
+            <tbody id="st-${gKey}">${renderStandingsRows(standings)}</tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <div class="matches">
+          <div class="matches__head">Partidos</div>
+          ${GROUP_SCHEDULE[gKey].map((_, mi) => renderMatchRow(gKey, mi, gsData)).join('')}
+        </div>
+      </div>
+    </div>`;
+
+  container.querySelectorAll('.score-inp').forEach(inp => {
+    inp.addEventListener('input', () => onScoreChange(gKey));
+  });
+}
+
+function renderStandingsRows(standings) {
+  return standings.map((t, i) => {
+    const posClass = i < 2 ? 'st-pos--q' : i === 2 ? 'st-pos--t' : 'st-pos--out';
+    return `<tr>
+      <td><span class="st-pos ${posClass}">${i+1}</span></td>
+      <td><span class="st-team">${t.f} ${t.n}</span></td>
+      <td>${t.j}</td><td>${t.g}</td><td>${t.e}</td><td>${t.p}</td>
+      <td>${t.gd > 0 ? '+' : ''}${t.gd}</td>
+      <td class="st-pts">${t.pts}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderMatchRow(gKey, mi, gsData) {
+  const sched = GROUP_SCHEDULE[gKey][mi];
+  const [hi, ai] = sched.pair;
+  const th = GROUPS[gKey].teams[hi];
+  const ta = GROUPS[gKey].teams[ai];
+  const sc = gsData[`${gKey}-${mi}`] ?? ['',''];
+
+  const dateLine = sched.date
+    ? `<span class="match-date">${formatDate(sched.date)}${sched.time ? ' · ' + sched.time + ' ' + sched.tz : ''} · ${sched.city}</span>`
+    : '';
+
+  return `
+    <div class="match-row">
+      <div style="flex:1;min-width:0">
+        ${dateLine}
+        <div style="display:flex;align-items:center;gap:.5rem">
+          <span class="match-team">${th.f} <span>${th.n}</span></span>
+          <div class="match-score">
+            <input class="score-inp" type="number" min="0" max="20" inputmode="numeric"
+              value="${sc[0]}"
+              data-group="${gKey}" data-match="${mi}" data-side="h"
+              aria-label="Goles de ${th.n}">
+            <span class="score-sep">-</span>
+            <input class="score-inp" type="number" min="0" max="20" inputmode="numeric"
+              value="${sc[1]}"
+              data-group="${gKey}" data-match="${mi}" data-side="a"
+              aria-label="Goles de ${ta.n}">
+          </div>
+          <span class="match-team match-team--away"><span>${ta.n}</span> ${ta.f}</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+function onScoreChange(gKey) {
+  const gsData = getDraftGS();
+  const panel  = document.getElementById(`gpanel-${gKey}`);
+
+  panel.querySelectorAll('.score-inp').forEach(inp => {
+    const key  = `${inp.dataset.group}-${inp.dataset.match}`;
+    gsData[key] = gsData[key] ?? ['',''];
+    gsData[key][inp.dataset.side === 'h' ? 0 : 1] = inp.value;
+  });
+
+  saveDraftGS(gsData);
+  document.getElementById(`st-${gKey}`).innerHTML =
+    renderStandingsRows(calcStandings(gKey, gsData));
+  refreshKnockout();
+}
+
+/* ====================================================
+   FASE ELIMINATORIA — UI
+   ==================================================== */
+const KO_ORDER = ['r32','r16','qf','sf','3rd','final'];
+
+function initKnockout() {
+  const tabNav = document.getElementById('ko-tab-nav');
+  const panels = document.getElementById('ko-panels');
+
+  tabNav.innerHTML = KO_ORDER.map((k, i) =>
+    `<button class="phase-tab" role="tab" aria-selected="${i===0}" data-round="${k}">
+       ${ROUNDS[k].label}
+     </button>`
+  ).join('');
+
+  panels.innerHTML = KO_ORDER.map((k, i) =>
+    `<div id="kopanel-${k}" role="tabpanel" ${i !== 0 ? 'hidden' : ''}></div>`
+  ).join('');
+
+  tabNav.addEventListener('click', e => {
+    const tab = e.target.closest('.phase-tab');
+    if (!tab) return;
+    tabNav.querySelectorAll('.phase-tab').forEach(t => t.setAttribute('aria-selected','false'));
+    tab.setAttribute('aria-selected','true');
+    panels.querySelectorAll('[role="tabpanel"]').forEach(p => p.hidden = true);
+    document.getElementById(`kopanel-${tab.dataset.round}`).hidden = false;
+  });
+
+  refreshKnockout();
+}
+
+function refreshKnockout() {
+  const gsData    = getDraftGS();
+  const koPicks   = getDraftKO();
+  const standings = getAllStandings(gsData);
+  const qualifiers= getQualifiers(standings);
+  const best3     = getBest3rds(standings);
+
+  KO_ORDER.forEach(roundKey => {
+    const panel = document.getElementById(`kopanel-${roundKey}`);
+    if (!panel) return;
+    renderKORound(roundKey, panel, qualifiers, best3, koPicks);
+  });
+}
+
+function renderKORound(roundKey, panel, qualifiers, best3, koPicks) {
+  panel.innerHTML = `<div class="ko-round">${
+    ROUNDS[roundKey].matches.map(m => renderKOMatch(m, qualifiers, best3, koPicks, roundKey)).join('')
+  }</div>`;
+
+  panel.querySelectorAll('.ko-pick').forEach(btn => {
+    btn.addEventListener('click', () => onKOPick(btn, koPicks));
+  });
+
+  panel.querySelectorAll('.ko-score-inp').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const picks = getDraftKO();
+      const k = inp.dataset.match;
+      if (!picks[k]) picks[k] = {};
+      picks[k][inp.dataset.side === 'h' ? 'sh' : 'sa'] = inp.value;
+      saveDraftKO(picks);
+    });
+  });
+}
+
+function renderKOMatch(m, qualifiers, best3, koPicks, roundKey) {
+  let teamH, teamA;
+
+  if (m.h && m.a) {
+    teamH = resolveSlot(m.h, qualifiers, best3, koPicks);
+    teamA = resolveSlot(m.a, qualifiers, best3, koPicks);
+  } else {
+    teamH = resolveSlot(m.p1, qualifiers, best3, koPicks);
+    teamA = resolveSlot(m.p2, qualifiers, best3, koPicks);
+    if (m.p1?.endsWith('-L')) teamH = resolveLoser(m.p1.slice(0,-2), koPicks, qualifiers, best3);
+    if (m.p2?.endsWith('-L')) teamA = resolveLoser(m.p2.slice(0,-2), koPicks, qualifiers, best3);
+  }
+
+  const pick   = koPicks[m.id];
+  const winner = pick?.team ?? null;
+  const sh     = pick?.sh ?? '';
+  const sa     = pick?.sa ?? '';
+  const hasPick= !!winner;
+  const hIsWin = winner && teamH && winner === teamH.replace(/^\S+\s/, '').trim();
+  const aIsWin = winner && teamA && winner === teamA.replace(/^\S+\s/, '').trim();
+  const tbd    = !teamH && !teamA;
+
+  const dateLine = m.date
+    ? `<div class="ko-match__date">📅 ${formatDate(m.date)}${m.city ? ' · ' + m.city : ''}</div>`
+    : '';
+
+  if (tbd) {
+    return `<div class="ko-match">
+      <div class="ko-match__teams"><span class="ko-tbd">Por determinar (completa las rondas anteriores)</span></div>
+      ${dateLine}
+      <div class="ko-match__label">${ROUNDS[roundKey].label} · ${m.id.toUpperCase()}</div>
+    </div>`;
+  }
+
+  const dis = !teamH || !teamA ? 'disabled' : '';
+
+  return `
+    <div class="ko-match${hasPick ? ' has-pick' : ''}" id="kom-${m.id}">
+      <div class="ko-match__teams">
+        <button class="ko-pick${hIsWin?' is-winner':''}${aIsWin?' is-loser':''}"
+          data-match="${m.id}" data-team="${escStr(teamH||'')}" data-side="h"
+          ${dis} aria-pressed="${hIsWin}" aria-label="Elegir ${teamH||'equipo'} como ganador">
+          ${teamH || '¿?'}
+        </button>
+        <div class="ko-match__mid">
+          <span class="ko-vs">VS</span>
+          <div class="ko-score-row">
+            <input class="ko-score-inp" type="number" min="0" max="20"
+              value="${sh}" data-match="${m.id}" data-side="h"
+              aria-label="Goles local" inputmode="numeric">
+            <span class="score-sep">-</span>
+            <input class="ko-score-inp" type="number" min="0" max="20"
+              value="${sa}" data-match="${m.id}" data-side="a"
+              aria-label="Goles visitante" inputmode="numeric">
+          </div>
+        </div>
+        <button class="ko-pick ko-pick--away${aIsWin?' is-winner':''}${hIsWin?' is-loser':''}"
+          data-match="${m.id}" data-team="${escStr(teamA||'')}" data-side="a"
+          ${dis} aria-pressed="${aIsWin}" aria-label="Elegir ${teamA||'equipo'} como ganador">
+          ${teamA || '¿?'}
+        </button>
+      </div>
+      ${dateLine}
+      <div class="ko-match__label">${ROUNDS[roundKey].label} · ${m.id.toUpperCase()}</div>
+    </div>`;
+}
+
+function onKOPick(btn, koPicks) {
+  const matchId = btn.dataset.match;
+  const rawTeam = btn.dataset.team;
+  const team    = rawTeam.replace(/^\S+\s/, '').trim() || rawTeam.trim();
+  const hf      = rawTeam.split(' ')[0];
+  koPicks[matchId] = { ...(koPicks[matchId]||{}), team, hf };
+  saveDraftKO(koPicks);
+  refreshKnockout();
+}
+
+/* ====================================================
+   PUNTUACIÓN
+   ==================================================== */
+function normalize(str) {
+  return String(str ?? '').trim().toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+function calcPtsGroup(predH, predA, realH, realA) {
+  if (predH === '' || predA === '' || realH === '' || realA === '') return 0;
+  const [ph, pa, rh, ra] = [+predH, +predA, +realH, +realA];
+  if (ph === rh && pa === ra) return 4;
+  const res = n => n > 0 ? 1 : n < 0 ? -1 : 0;
+  if (res(ph-pa) === res(rh-ra)) return 2;
+  return 0;
+}
+
+function calcPtsKO(predTeam, predSH, predSA, realTeam, realSH, realSA) {
+  if (!predTeam || !realTeam) return 0;
+  if (normalize(predTeam) !== normalize(realTeam)) return 0;
+  if (predSH !== '' && predSA !== '' && realSH !== '' && realSA !== ''
+      && +predSH === +realSH && +predSA === +realSA) return 6;
+  return 3;
+}
+
+function calcBonusPts(entry, bonusActual) {
+  if (!bonusActual) return 0;
+  let pts = 0;
+  for (const [field, value] of Object.entries(BONUS_POINTS)) {
+    if (entry[field] && bonusActual[field] && normalize(entry[field]) === normalize(bonusActual[field])) {
+      pts += value;
+    }
+  }
+  return pts;
+}
+
+function calcEntryPts(entry) {
+  const actualGS    = getActualGS();
+  const actualKO    = getActualKO();
+  const bonusActual = getActualBonus();
+  let gsPts = 0, koPts = 0;
+
+  if (entry.draftGS) {
+    for (const [key, pred] of Object.entries(entry.draftGS)) {
+      const real = actualGS[key];
+      if (real) gsPts += calcPtsGroup(pred[0], pred[1], real[0], real[1]);
+    }
+  }
+  if (entry.draftKO) {
+    for (const [matchId, pred] of Object.entries(entry.draftKO)) {
+      const real = actualKO[matchId];
+      if (real) koPts += calcPtsKO(pred.team, pred.sh, pred.sa, real.team, real.sh, real.sa);
+    }
+  }
+  return gsPts + koPts + calcBonusPts(entry, bonusActual);
+}
+
+/* ====================================================
+   LEADERBOARD
+   ==================================================== */
+const lbEmpty = document.getElementById('lb-empty');
+const lbTable = document.getElementById('lb-table');
+const lbBody  = document.getElementById('lb-body');
+
+function renderLeaderboard() {
+  const entries = getEntries();
+  if (entries.length === 0) { lbEmpty.hidden = false; lbTable.hidden = true; return; }
+
+  const ranked = entries
+    .map(e => ({ ...e, _pts: calcEntryPts(e) }))
+    .sort((a,b) => b._pts - a._pts);
+
+  lbEmpty.hidden = true;
+  lbTable.hidden = false;
+
+  lbBody.innerHTML = ranked.map((e, i) => {
+    const pos = i + 1;
+    const rankClass = pos <= 3 ? `lb-rank--${pos}` : '';
+    const medal = pos === 1 ? '🏆' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : pos;
+    return `<tr>
+      <td><span class="lb-rank ${rankClass}">${medal}</span></td>
+      <td><strong>${safeText(e.nombre)}</strong></td>
+      <td><span class="lb-pts">${e._pts} pts</span></td>
+      <td>
+        <button class="lb-del" data-id="${e.id}"
+          aria-label="Eliminar porra de ${safeText(e.nombre)}">Eliminar</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  lbBody.querySelectorAll('.lb-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      saveEntries(getEntries().filter(e => e.id !== Number(btn.dataset.id)));
+      renderLeaderboard();
+    });
+  });
+}
+
+function safeText(str) {
+  const d = document.createElement('span');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function escStr(str) { return str.replace(/"/g, '&quot;'); }
+
+/* ====================================================
+   FORMULARIO DE PARTICIPACIÓN
+   ==================================================== */
+(function initForm() {
+  const form      = document.getElementById('porra-form');
+  const nameInput = document.getElementById('f-nombre');
+  const nameErr   = document.getElementById('f-nombre-err');
+  const toast     = document.getElementById('form-toast');
+  const toastMsg  = document.getElementById('toast-msg');
+
+  nameInput.addEventListener('input', () => {
+    nameInput.classList.remove('is-invalid');
+    nameErr.textContent = '';
+  });
+
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const nombre = nameInput.value.trim();
+    if (!nombre) {
+      nameInput.classList.add('is-invalid');
+      nameErr.textContent = 'Por favor, escribe tu nombre o alias.';
+      nameInput.focus();
+      return;
+    }
+
+    const entry = {
+      id:         Date.now(),
+      nombre,
+      campeon:    form.campeon.value.trim(),
+      subcampeon: form.subcampeon.value.trim(),
+      tercero:    form.tercero.value.trim(),
+      cuarto:     form.cuarto.value.trim(),
+      goleador:   form.goleador.value.trim(),
+      portero:    form.portero.value.trim(),
+      mvp:        form.mvp.value.trim(),
+      joven:      form.joven.value.trim(),
+      sorpresa:   form.sorpresa.value.trim(),
+      draftGS:    getDraftGS(),
+      draftKO:    getDraftKO(),
+    };
+
+    const entries = getEntries();
+    const existing = entries.findIndex(ex => normalize(ex.nombre) === normalize(nombre));
+    if (existing >= 0) {
+      entries[existing] = entry;
+      showToast('✅ Porra actualizada con tus predicciones actuales.');
+    } else {
+      entries.push(entry);
+      showToast('✅ ¡Porra guardada! Grupos, eliminatoria y bonus registrados.');
+    }
+
+    saveEntries(entries);
+    renderLeaderboard();
+    form.reset();
+    document.getElementById('clasificacion').scrollIntoView({ behavior:'smooth', block:'start' });
+  });
+
+  function showToast(msg) {
+    toastMsg.textContent = msg;
+    toast.hidden = false;
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => { toast.hidden = true; }, 6000);
+  }
+})();
+
+/* ====================================================
+   PANEL DE ADMINISTRACIÓN  (?admin=1)
+   Introduce resultados reales día a día →
+   los puntos se recalculan automáticamente
+   ==================================================== */
+(function initAdmin() {
+  const params = new URLSearchParams(window.location.search);
+  if (!params.has('admin')) return;
+
+  const panel = document.getElementById('admin-panel');
+  panel.hidden = false;
+
+  // GS results
+  const adminGSWrap = document.createElement('div');
+  adminGSWrap.innerHTML = `
+    <h4 class="admin-panel__title" style="margin-top:1.5rem">⚽ Resultados Reales — Fase de Grupos</h4>
+    <p class="admin-panel__desc">Introduce el marcador real de cada partido. Los puntos se recalculan al instante.</p>
+    <div id="admin-gs-content"></div>`;
+  panel.appendChild(adminGSWrap);
+
+  // KO results
+  const adminKOWrap = document.createElement('div');
+  adminKOWrap.innerHTML = `
+    <h4 class="admin-panel__title" style="margin-top:1.5rem">🏆 Resultados Reales — Fase Eliminatoria</h4>
+    <p class="admin-panel__desc">Introduce el ganador y el marcador de cada partido eliminatorio.</p>
+    <div id="admin-ko-content"></div>`;
+  panel.appendChild(adminKOWrap);
+
+  renderAdminGS();
+  renderAdminKO();
+
+  // Bonus form
+  const resultsForm = document.getElementById('results-form');
+  const stored = getActualBonus();
+  if (stored) {
+    for (const [field, val] of Object.entries(stored)) {
+      const el = resultsForm.elements[field];
+      if (el) el.value = val;
+    }
+  }
+
+  resultsForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const data = Object.fromEntries(
+      Object.keys(BONUS_POINTS).map(f => [f, resultsForm.elements[f]?.value.trim() ?? ''])
+    );
+    save(SK.ACTUAL_BONUS, data);
+    renderLeaderboard();
+    showAdminToast('✅ Bonus guardados. Puntuaciones actualizadas.');
+  });
+})();
+
+function renderAdminGS() {
+  const container = document.getElementById('admin-gs-content');
+  if (!container) return;
+  const actual = getActualGS();
+
+  container.innerHTML = Object.entries(GROUPS).map(([gKey, g]) =>
+    `<details style="margin-bottom:.6rem">
+      <summary style="cursor:pointer;padding:.5rem;font-weight:700;color:var(--c-gold)">Grupo ${gKey}</summary>
+      <div style="padding:.25rem 0">
+        ${GROUP_SCHEDULE[gKey].map((sched, mi) => {
+          const th = g.teams[sched.pair[0]], ta = g.teams[sched.pair[1]];
+          const key = `${gKey}-${mi}`;
+          const sc  = actual[key] ?? ['',''];
+          const dl  = sched.date ? `<span style="font-size:.7rem;color:var(--c-text-3)">${formatDate(sched.date)} · ${sched.city}</span>` : '';
+          return `<div class="match-row" style="flex-wrap:wrap">
+            ${dl ? `<div style="flex-basis:100%;padding-bottom:.15rem">${dl}</div>` : ''}
+            <span class="match-team" style="font-size:.82rem">${th.f} ${th.n}</span>
+            <div class="match-score">
+              <input class="score-inp admin-gs-inp" type="number" min="0" max="20"
+                value="${sc[0]}" data-key="${key}" data-side="h"
+                style="background:var(--c-bg-alt)" inputmode="numeric">
+              <span class="score-sep">-</span>
+              <input class="score-inp admin-gs-inp" type="number" min="0" max="20"
+                value="${sc[1]}" data-key="${key}" data-side="a"
+                style="background:var(--c-bg-alt)" inputmode="numeric">
+            </div>
+            <span class="match-team match-team--away" style="font-size:.82rem">${ta.n} ${ta.f}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </details>`
+  ).join('');
+
+  container.querySelectorAll('.admin-gs-inp').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const actual = getActualGS();
+      actual[inp.dataset.key] = actual[inp.dataset.key] ?? ['',''];
+      actual[inp.dataset.key][inp.dataset.side === 'h' ? 0 : 1] = inp.value;
+      save(SK.ACTUAL_GS, actual);
+      renderLeaderboard();
+      showAdminToast('✅ Resultado guardado. Clasificación actualizada.');
+    });
+  });
+}
+
+function renderAdminKO() {
+  const container = document.getElementById('admin-ko-content');
+  if (!container) return;
+  const actual = getActualKO();
+
+  const allMatches = KO_ORDER.flatMap(rk =>
+    ROUNDS[rk].matches.map(m => ({ ...m, roundLabel: ROUNDS[rk].label }))
+  );
+
+  container.innerHTML = `<div style="display:flex;flex-direction:column;gap:.5rem">` +
+    allMatches.map(m => {
+      const pick = actual[m.id] ?? {};
+      const dl   = m.date ? `<span style="font-size:.7rem;color:var(--c-text-3)">${formatDate(m.date)}${m.city ? ' · '+m.city : ''}</span>` : '';
+      return `<div class="match-row" style="flex-wrap:wrap;gap:.5rem">
+        <span style="font-size:.75rem;color:var(--c-text-2);flex-basis:100%">${m.roundLabel} — ${m.id.toUpperCase()} ${dl}</span>
+        <input type="text" class="form-input admin-ko-team" data-match="${m.id}"
+          value="${escStr(pick.team||'')}" placeholder="Equipo ganador"
+          style="flex:1;min-width:130px;font-size:.85rem;padding:.5rem .75rem">
+        <div class="match-score">
+          <input class="score-inp admin-ko-sh" type="number" min="0" max="20"
+            value="${pick.sh||''}" data-match="${m.id}" style="background:var(--c-bg-alt)" inputmode="numeric">
+          <span class="score-sep">-</span>
+          <input class="score-inp admin-ko-sa" type="number" min="0" max="20"
+            value="${pick.sa||''}" data-match="${m.id}" style="background:var(--c-bg-alt)" inputmode="numeric">
+        </div>
+        <button class="btn btn--secondary admin-ko-save" data-match="${m.id}"
+          style="padding:.4rem .9rem;font-size:.82rem">Guardar</button>
+      </div>`;
+    }).join('') + `</div>`;
+
+  container.querySelectorAll('.admin-ko-save').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const matchId = btn.dataset.match;
+      const actual  = getActualKO();
+      const row     = btn.closest('.match-row');
+      actual[matchId] = {
+        team: row.querySelector('.admin-ko-team').value.trim(),
+        sh:   row.querySelector('.admin-ko-sh').value,
+        sa:   row.querySelector('.admin-ko-sa').value,
+      };
+      save(SK.ACTUAL_KO, actual);
+      renderLeaderboard();
+      showAdminToast('✅ Resultado guardado. Puntuaciones recalculadas.');
+    });
+  });
+}
+
+function showAdminToast(msg) {
+  let t = document.getElementById('admin-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'admin-toast';
+    t.className = 'form-toast';
+    t.style.cssText = 'position:fixed;bottom:1.5rem;right:1.5rem;z-index:999;max-width:360px';
+    document.body.appendChild(t);
+  }
+  t.innerHTML = `<span>✅</span><p>${safeText(msg)}</p>`;
+  t.hidden = false;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.hidden = true; }, 4000);
+}
+
+/* ====================================================
+   COUNTDOWN
+   ==================================================== */
+(function initCountdown() {
+  const els = {
+    days:  document.getElementById('cd-days'),
+    hours: document.getElementById('cd-hours'),
+    mins:  document.getElementById('cd-mins'),
+    secs:  document.getElementById('cd-secs'),
+  };
+  function pad(n) { return String(n).padStart(2,'0'); }
+  function tick() {
+    const diff = WC_KICKOFF - Date.now();
+    if (diff <= 0) {
+      document.querySelector('.hero__countdown').innerHTML =
+        '<p style="color:var(--c-gold);font-size:1.4rem;font-weight:800">¡El Mundial ha comenzado! ⚽</p>';
+      return;
+    }
+    const d = Math.floor(diff / 86_400_000);
+    const h = Math.floor((diff % 86_400_000) / 3_600_000);
+    const m = Math.floor((diff % 3_600_000)  /    60_000);
+    const s = Math.floor((diff %    60_000)  /     1_000);
+    els.days.textContent = pad(d); els.hours.textContent = pad(h);
+    els.mins.textContent = pad(m); els.secs.textContent  = pad(s);
+  }
+  tick();
+  setInterval(tick, 1000);
+})();
+
+/* ====================================================
+   NAVEGACIÓN MÓVIL
+   ==================================================== */
+(function initNav() {
+  const toggle = document.querySelector('.nav__toggle');
+  const menu   = document.getElementById('nav-menu');
+  if (!toggle || !menu) return;
+  toggle.addEventListener('click', () => {
+    const open = menu.classList.toggle('is-open');
+    toggle.setAttribute('aria-expanded', String(open));
+  });
+  menu.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => {
+      menu.classList.remove('is-open');
+      toggle.setAttribute('aria-expanded','false');
+    });
+  });
+  document.addEventListener('click', e => {
+    if (!toggle.contains(e.target) && !menu.contains(e.target)) {
+      menu.classList.remove('is-open');
+      toggle.setAttribute('aria-expanded','false');
+    }
+  });
+})();
+
+/* ====================================================
+   PRINT
+   ==================================================== */
+document.getElementById('btn-print')?.addEventListener('click', () => window.print());
+
+/* ====================================================
+   ARRANQUE
+   ==================================================== */
+initGroups();
+initKnockout();
+renderLeaderboard();

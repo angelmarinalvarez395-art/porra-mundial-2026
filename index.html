@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Porra del Mundial FIFA 2026 con amigos — predicciones, reglas y clasificación en tiempo real.">
+  <title>Porra · Mundial 2026</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <a href="#main" class="skip-link">Saltar al contenido principal</a>
+
+  <header class="header" role="banner">
+    <nav class="nav" aria-label="Navegación principal">
+      <a href="#" class="nav__logo" aria-label="Porra Mundial 2026 — inicio">
+        <span aria-hidden="true">⚽</span>
+        <span>Porra 2026</span>
+      </a>
+      <ul class="nav__links" id="nav-menu" role="list">
+        <li><a href="#reglas">Reglas</a></li>
+        <li><a href="#bonus">Bonus</a></li>
+        <li><a href="#grupos">Grupos</a></li>
+        <li><a href="#eliminatorias">Eliminatorias</a></li>
+        <li><a href="#participa">Participa</a></li>
+        <li><a href="#clasificacion">Clasificación</a></li>
+      </ul>
+      <button
+        class="nav__toggle"
+        aria-label="Abrir menú de navegación"
+        aria-expanded="false"
+        aria-controls="nav-menu"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </nav>
+  </header>
+
+  <main id="main">
+
+    <!-- ───── HERO ───── -->
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero__noise" aria-hidden="true"></div>
+      <div class="hero__glows" aria-hidden="true">
+        <span class="glow glow--red"></span>
+        <span class="glow glow--blue"></span>
+        <span class="glow glow--gold"></span>
+      </div>
+
+      <div class="hero__content">
+        <p class="hero__eyebrow" aria-hidden="true">FIFA WORLD CUP™</p>
+
+        <h1 id="hero-title" class="hero__title">
+          <span class="hero__title-line">Mundial</span>
+          <span class="hero__title-year" aria-label="2026">2026</span>
+        </h1>
+
+        <p class="hero__subtitle">La porra definitiva con tus amigos</p>
+
+        <ul class="hero__hosts" aria-label="Países sede del torneo" role="list">
+          <li><span aria-hidden="true">🇺🇸</span> USA</li>
+          <li aria-hidden="true">·</li>
+          <li><span aria-hidden="true">🇨🇦</span> Canadá</li>
+          <li aria-hidden="true">·</li>
+          <li><span aria-hidden="true">🇲🇽</span> México</li>
+        </ul>
+
+        <div class="hero__countdown" aria-label="Cuenta atrás para el Mundial 2026" aria-live="polite">
+          <div class="countdown-item">
+            <span class="countdown-item__num" id="cd-days">--</span>
+            <span class="countdown-item__label">días</span>
+          </div>
+          <div class="countdown-sep" aria-hidden="true">:</div>
+          <div class="countdown-item">
+            <span class="countdown-item__num" id="cd-hours">--</span>
+            <span class="countdown-item__label">horas</span>
+          </div>
+          <div class="countdown-sep" aria-hidden="true">:</div>
+          <div class="countdown-item">
+            <span class="countdown-item__num" id="cd-mins">--</span>
+            <span class="countdown-item__label">min</span>
+          </div>
+          <div class="countdown-sep" aria-hidden="true">:</div>
+          <div class="countdown-item">
+            <span class="countdown-item__num" id="cd-secs">--</span>
+            <span class="countdown-item__label">seg</span>
+          </div>
+        </div>
+
+        <a href="#participa" class="btn btn--hero">
+          Hacer mi porra
+          <span aria-hidden="true">→</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ───── REGLAS ───── -->
+    <section id="reglas" class="section" aria-labelledby="reglas-title">
+      <div class="container">
+        <header class="section-header">
+          <h2 id="reglas-title" class="section-title">Sistema de Puntuación</h2>
+          <p class="section-sub">Acumula puntos fase a fase</p>
+        </header>
+
+        <div class="rules-grid">
+
+          <article class="rules-card" aria-labelledby="grupos-heading">
+            <div class="rules-card__head">
+              <span class="rules-card__badge rules-card__badge--blue" aria-hidden="true">⬤</span>
+              <h3 id="grupos-heading">Fase de Grupos</h3>
+            </div>
+            <ul class="rules-list" role="list">
+              <li class="rules-list__item">
+                <div class="rules-list__info">
+                  <strong>Resultado exacto</strong>
+                  <span>Aciertas el marcador exacto</span>
+                </div>
+                <span class="rules-list__pts rules-list__pts--gold" aria-label="4 puntos">4 pts</span>
+              </li>
+              <li class="rules-list__item">
+                <div class="rules-list__info">
+                  <strong>Ganador o empate</strong>
+                  <span>Aciertas el resultado 1 X 2</span>
+                </div>
+                <span class="rules-list__pts rules-list__pts--silver" aria-label="2 puntos">2 pts</span>
+              </li>
+              <li class="rules-list__item">
+                <div class="rules-list__info">
+                  <strong>Fallo total</strong>
+                  <span>No aciertas nada</span>
+                </div>
+                <span class="rules-list__pts rules-list__pts--zero" aria-label="0 puntos">0 pts</span>
+              </li>
+            </ul>
+          </article>
+
+          <article class="rules-card" aria-labelledby="elim-heading">
+            <div class="rules-card__head">
+              <span class="rules-card__badge rules-card__badge--red" aria-hidden="true">⬤</span>
+              <h3 id="elim-heading">Fase Eliminatoria</h3>
+            </div>
+            <ul class="rules-list" role="list">
+              <li class="rules-list__item">
+                <div class="rules-list__info">
+                  <strong>Resultado exacto</strong>
+                  <span>Incluye prórroga y penaltis</span>
+                </div>
+                <span class="rules-list__pts rules-list__pts--gold" aria-label="6 puntos">6 pts</span>
+              </li>
+              <li class="rules-list__item">
+                <div class="rules-list__info">
+                  <strong>Equipo clasificado</strong>
+                  <span>Aciertas quién pasa</span>
+                </div>
+                <span class="rules-list__pts rules-list__pts--silver" aria-label="3 puntos">3 pts</span>
+              </li>
+              <li class="rules-list__item">
+                <div class="rules-list__info">
+                  <strong>Fallo total</strong>
+                  <span>No aciertas nada</span>
+                </div>
+                <span class="rules-list__pts rules-list__pts--zero" aria-label="0 puntos">0 pts</span>
+              </li>
+            </ul>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ───── BONUS ───── -->
+    <section id="bonus" class="section section--alt" aria-labelledby="bonus-title">
+      <div class="container">
+        <header class="section-header">
+          <h2 id="bonus-title" class="section-title">Bonus Especiales</h2>
+          <p class="section-sub">Predicciones extra para ampliar tu ventaja</p>
+        </header>
+
+        <ul class="bonus-grid" role="list">
+
+          <li class="bonus-card" aria-label="Campeón del Mundial, 10 puntos">
+            <span class="bonus-card__icon" aria-hidden="true">🏆</span>
+            <h3 class="bonus-card__title">Campeón del Mundial</h3>
+            <p class="bonus-card__desc">¿Quién levantará el trofeo?</p>
+            <span class="bonus-card__pts">10 pts</span>
+          </li>
+
+          <li class="bonus-card" aria-label="Subcampeón, 6 puntos">
+            <span class="bonus-card__icon" aria-hidden="true">🥈</span>
+            <h3 class="bonus-card__title">Subcampeón</h3>
+            <p class="bonus-card__desc">El finalista que no gana</p>
+            <span class="bonus-card__pts">6 pts</span>
+          </li>
+
+          <li class="bonus-card" aria-label="Tercer puesto, 4 puntos">
+            <span class="bonus-card__icon" aria-hidden="true">🥉</span>
+            <h3 class="bonus-card__title">Tercer Puesto</h3>
+            <p class="bonus-card__desc">El ganador del tercer partido</p>
+            <span class="bonus-card__pts">4 pts</span>
+          </li>
+
+          <li class="bonus-card" aria-label="Cuarto puesto, 2 puntos">
+            <span class="bonus-card__icon" aria-hidden="true">4️⃣</span>
+            <h3 class="bonus-card__title">Cuarto Puesto</h3>
+            <p class="bonus-card__desc">El perdedor del tercer partido</p>
+            <span class="bonus-card__pts">2 pts</span>
+          </li>
+
+          <li class="bonus-card" aria-label="Máximo Goleador, 6 puntos">
+            <span class="bonus-card__icon" aria-hidden="true">⚽</span>
+            <h3 class="bonus-card__title">Máximo Goleador</h3>
+            <p class="bonus-card__desc">El jugador que más goles marque</p>
+            <span class="bonus-card__pts">6 pts</span>
+          </li>
+
+          <li class="bonus-card" aria-label="Portero menos goleado, 4 puntos">
+            <span class="bonus-card__icon" aria-hidden="true">🧤</span>
+            <h3 class="bonus-card__title">Portero Menos Goleado</h3>
+            <p class="bonus-card__desc">El guardameta más sólido del torneo</p>
+            <span class="bonus-card__pts">4 pts</span>
+          </li>
+
+          <li class="bonus-card" aria-label="MVP del Torneo, 6 puntos">
+            <span class="bonus-card__icon" aria-hidden="true">⭐</span>
+            <h3 class="bonus-card__title">MVP del Torneo</h3>
+            <p class="bonus-card__desc">El mejor jugador del Mundial</p>
+            <span class="bonus-card__pts">6 pts</span>
+          </li>
+
+          <li class="bonus-card" aria-label="Mejor Jugador Joven Sub-21, 4 puntos">
+            <span class="bonus-card__icon" aria-hidden="true">👶</span>
+            <h3 class="bonus-card__title">Mejor Jugador Joven</h3>
+            <p class="bonus-card__desc">Sub-21 · La próxima estrella</p>
+            <span class="bonus-card__pts">4 pts</span>
+          </li>
+
+          <li class="bonus-card bonus-card--highlight" aria-label="Equipo sorpresa llega a semifinales, 8 puntos">
+            <span class="bonus-card__icon" aria-hidden="true">😲</span>
+            <h3 class="bonus-card__title">La Sorpresa</h3>
+            <p class="bonus-card__desc">Un equipo inesperado llega a semifinales</p>
+            <span class="bonus-card__pts">8 pts</span>
+          </li>
+
+        </ul>
+
+        <p class="bonus-note" aria-live="polite">
+          Puntuación máxima bonus: <strong>50 pts</strong>
+        </p>
+      </div>
+    </section>
+
+    <!-- ───── GRUPOS ───── -->
+    <section id="grupos" class="section" aria-labelledby="grupos-porra-title">
+      <div class="container">
+        <header class="section-header">
+          <h2 id="grupos-porra-title" class="section-title">Fase de Grupos</h2>
+          <p class="section-sub">Predice el marcador de cada partido — la clasificación se recalcula en tiempo real</p>
+        </header>
+        <nav class="phase-tabs" id="group-tab-nav" aria-label="Grupos del Mundial 2026" role="tablist"></nav>
+        <div id="group-panels"></div>
+      </div>
+    </section>
+
+    <!-- ───── ELIMINATORIAS ───── -->
+    <section id="eliminatorias" class="section section--alt" aria-labelledby="ko-title">
+      <div class="container">
+        <header class="section-header">
+          <h2 id="ko-title" class="section-title">Fase Eliminatoria</h2>
+          <p class="section-sub">Haz clic en el equipo que predices como ganador de cada partido</p>
+        </header>
+        <nav class="phase-tabs" id="ko-tab-nav" aria-label="Rondas eliminatorias" role="tablist"></nav>
+        <div id="ko-panels"></div>
+      </div>
+    </section>
+
+    <!-- ───── FORMULARIO ───── -->
+    <section id="participa" class="section" aria-labelledby="form-title">
+      <div class="container container--narrow">
+        <header class="section-header">
+          <h2 id="form-title" class="section-title">Hacer Mi Porra</h2>
+          <p class="section-sub">Registra tus predicciones antes del pitido inicial</p>
+        </header>
+
+        <form class="porra-form" id="porra-form" novalidate aria-label="Formulario de porra del Mundial 2026">
+
+          <fieldset class="fieldset">
+            <legend class="fieldset__legend">Participante</legend>
+            <div class="form-group">
+              <label for="f-nombre" class="form-label">
+                Tu nombre
+                <span class="form-required" aria-hidden="true">*</span>
+              </label>
+              <input
+                type="text"
+                id="f-nombre"
+                name="nombre"
+                class="form-input"
+                placeholder="Escribe tu nombre o alias"
+                required
+                aria-required="true"
+                aria-describedby="f-nombre-err"
+                autocomplete="given-name"
+              >
+              <span class="form-error" id="f-nombre-err" role="alert"></span>
+            </div>
+          </fieldset>
+
+          <fieldset class="fieldset">
+            <legend class="fieldset__legend">🏆 Bonus Especiales</legend>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="f-campeon" class="form-label">Campeón 🏆</label>
+                <input type="text" id="f-campeon" name="campeon" class="form-input" placeholder="País campeón" autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label for="f-subcampeon" class="form-label">Subcampeón 🥈</label>
+                <input type="text" id="f-subcampeon" name="subcampeon" class="form-input" placeholder="País finalista" autocomplete="off">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="f-tercero" class="form-label">Tercer Puesto 🥉</label>
+                <input type="text" id="f-tercero" name="tercero" class="form-input" placeholder="País 3.º clasificado" autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label for="f-cuarto" class="form-label">Cuarto Puesto 4️⃣</label>
+                <input type="text" id="f-cuarto" name="cuarto" class="form-input" placeholder="País 4.º clasificado" autocomplete="off">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="f-goleador" class="form-label">Máximo Goleador ⚽</label>
+                <input type="text" id="f-goleador" name="goleador" class="form-input" placeholder="Nombre del jugador" autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label for="f-portero" class="form-label">Portero Menos Goleado 🧤</label>
+                <input type="text" id="f-portero" name="portero" class="form-input" placeholder="Nombre del portero" autocomplete="off">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="f-mvp" class="form-label">MVP del Torneo ⭐</label>
+                <input type="text" id="f-mvp" name="mvp" class="form-input" placeholder="Nombre del jugador" autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label for="f-joven" class="form-label">Mejor Jugador Joven 👶</label>
+                <input type="text" id="f-joven" name="joven" class="form-input" placeholder="Sub-21" autocomplete="off">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="f-sorpresa" class="form-label">Equipo Sorpresa a Semifinales 😲</label>
+              <input type="text" id="f-sorpresa" name="sorpresa" class="form-input" placeholder="¿Qué equipo te sorprenderá?" autocomplete="off">
+            </div>
+          </fieldset>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn--primary">
+              <span>Guardar porra</span>
+              <span aria-hidden="true">⚽</span>
+            </button>
+            <button type="button" class="btn btn--secondary" id="btn-print">
+              <span>Imprimir</span>
+              <span aria-hidden="true">🖨️</span>
+            </button>
+          </div>
+
+          <div class="form-toast" id="form-toast" role="status" aria-live="polite" hidden>
+            <span aria-hidden="true">✅</span>
+            <p id="toast-msg">Porra guardada con éxito.</p>
+          </div>
+
+        </form>
+      </div>
+    </section>
+
+    <!-- ───── CLASIFICACIÓN ───── -->
+    <section id="clasificacion" class="section section--alt" aria-labelledby="ranking-title">
+      <div class="container">
+        <header class="section-header">
+          <h2 id="ranking-title" class="section-title">Clasificación</h2>
+          <p class="section-sub">El ranking actualizado de tu grupo</p>
+        </header>
+
+        <div class="leaderboard" id="leaderboard">
+          <div class="leaderboard__empty" id="lb-empty">
+            <span aria-hidden="true">⚽</span>
+            <p>Todavía no hay participantes. ¡Sé el primero!</p>
+          </div>
+          <table class="lb-table" id="lb-table" hidden aria-label="Tabla de clasificación de la porra">
+            <thead>
+              <tr>
+                <th scope="col" class="lb-table__col-pos">#</th>
+                <th scope="col">Participante</th>
+                <th scope="col" class="lb-table__col-pts">Puntos</th>
+                <th scope="col" class="lb-table__col-actions">
+                  <span class="sr-only">Acciones</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody id="lb-body"></tbody>
+          </table>
+        </div>
+
+        <!-- Admin panel — visible sólo con ?admin=1 en la URL -->
+        <div class="admin-panel" id="admin-panel" hidden aria-labelledby="admin-title">
+          <h3 id="admin-title" class="admin-panel__title">
+            <span aria-hidden="true">🔒</span> Panel de Administración
+          </h3>
+          <p class="admin-panel__desc">Introduce los resultados reales para calcular puntos automáticamente.</p>
+
+          <form id="results-form" aria-label="Formulario de resultados reales">
+            <div class="admin-grid">
+              <div class="form-group">
+                <label for="r-campeon" class="form-label">Campeón Real 🏆</label>
+                <input type="text" id="r-campeon" name="campeon" class="form-input" autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label for="r-subcampeon" class="form-label">Subcampeón Real 🥈</label>
+                <input type="text" id="r-subcampeon" name="subcampeon" class="form-input" autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label for="r-tercero" class="form-label">Tercer Puesto Real 🥉</label>
+                <input type="text" id="r-tercero" name="tercero" class="form-input" autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label for="r-cuarto" class="form-label">Cuarto Puesto Real 4️⃣</label>
+                <input type="text" id="r-cuarto" name="cuarto" class="form-input" autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label for="r-goleador" class="form-label">Máximo Goleador Real ⚽</label>
+                <input type="text" id="r-goleador" name="goleador" class="form-input" autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label for="r-portero" class="form-label">Portero Menos Goleado Real 🧤</label>
+                <input type="text" id="r-portero" name="portero" class="form-input" autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label for="r-mvp" class="form-label">MVP Real ⭐</label>
+                <input type="text" id="r-mvp" name="mvp" class="form-input" autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label for="r-joven" class="form-label">Mejor Joven Real 👶</label>
+                <input type="text" id="r-joven" name="joven" class="form-input" autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label for="r-sorpresa" class="form-label">Equipo Sorpresa Real 😲</label>
+                <input type="text" id="r-sorpresa" name="sorpresa" class="form-input" autocomplete="off">
+              </div>
+            </div>
+            <button type="submit" class="btn btn--primary">
+              Calcular puntuaciones
+            </button>
+          </form>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer" role="contentinfo">
+    <div class="container">
+      <p class="footer__title">
+        <span aria-hidden="true">⚽</span>
+        Porra Mundial 2026
+      </p>
+      <p class="footer__hosts">
+        <span aria-hidden="true">🇺🇸</span> USA ·
+        <span aria-hidden="true">🇨🇦</span> Canadá ·
+        <span aria-hidden="true">🇲🇽</span> México
+      </p>
+      <p class="footer__copy">¡Que gane el mejor!</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
