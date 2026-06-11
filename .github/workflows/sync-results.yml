@@ -1,0 +1,35 @@
+name: Sync Mundial 2026 Results
+
+on:
+  schedule:
+    # Cada 30 minutos durante el torneo (11 jun – 19 jul 2026)
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+    # Permite ejecutarlo manualmente desde GitHub Actions
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: scripts/package.json
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: scripts
+
+      - name: Sync results
+        run: node sync-results.js
+        working-directory: scripts
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FOOTBALL_API_KEY: ${{ secrets.FOOTBALL_API_KEY }}
