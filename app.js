@@ -707,6 +707,8 @@ const lbEmpty = document.getElementById('lb-empty');
 const lbTable = document.getElementById('lb-table');
 const lbBody  = document.getElementById('lb-body');
 
+const IS_ADMIN = new URLSearchParams(window.location.search).has('admin');
+
 function renderLeaderboard() {
   const entries = _entries;
   if (entries.length === 0) { lbEmpty.hidden = false; lbTable.hidden = true; return; }
@@ -722,21 +724,21 @@ function renderLeaderboard() {
     const pos = i + 1;
     const rankClass = pos <= 3 ? `lb-rank--${pos}` : '';
     const medal = pos === 1 ? '🏆' : pos === 2 ? '🥈' : pos === 3 ? '🥉' : pos;
+    const delBtn = IS_ADMIN
+      ? `<button class="lb-del" data-id="${e.id}"
+           aria-label="Eliminar porra de ${safeText(e.nombre)}">Eliminar</button>`
+      : '';
     return `<tr>
       <td><span class="lb-rank ${rankClass}">${medal}</span></td>
       <td><strong>${safeText(e.nombre)}</strong></td>
       <td><span class="lb-pts">${e._pts} pts</span></td>
-      <td>
-        <button class="lb-del" data-id="${e.id}"
-          aria-label="Eliminar porra de ${safeText(e.nombre)}">Eliminar</button>
-      </td>
+      <td>${delBtn}</td>
     </tr>`;
   }).join('');
 
   lbBody.querySelectorAll('.lb-del').forEach(btn => {
     btn.addEventListener('click', () => {
       deleteEntry(Number(btn.dataset.id));
-      // renderLeaderboard se llama automáticamente cuando Firebase confirma el borrado
     });
   });
 }
