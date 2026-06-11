@@ -1101,6 +1101,18 @@ ul { list-style: none; }
 
 .match-row--done .live-score { border-color: rgba(255 215 0 / 0.3); }
 
+.match-team.is-winner { color: var(--c-gold); }
+.match-team.is-loser  { opacity: 0.38; }
+
+.match-score-vs {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--c-text-3);
+  letter-spacing: 0.08em;
+  padding: 0 0.75rem;
+  flex-shrink: 0;
+}
+
 .match-team {
   flex: 1;
   display: flex;

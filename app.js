@@ -770,20 +770,32 @@ function renderGroupMatchResults(k) {
   const teams = GROUPS[k].teams;
   return GROUP_SCHEDULE[k].map((sched, mi) => {
     const [hi, ai] = sched.pair;
+    const th = teams[hi], ta = teams[ai];
     const sc = _actualGS[`${k}-${mi}`];
     const hasResult = sc != null && sc[0] != null && sc[1] != null;
     const dateStr = new Date(sched.date + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-    const scoreH = hasResult ? safeText(String(sc[0])) : '?';
-    const scoreA = hasResult ? safeText(String(sc[1])) : '?';
-    return `<div class="match-row${hasResult ? ' match-row--done' : ''}">
-      <span class="match-row__date">${safeText(dateStr)}</span>
-      <span class="match-team">${safeText(teams[hi].n)}</span>
-      <span class="match-score">
-        <span class="live-score">${scoreH}</span>
+
+    let hClass = 'match-team', aClass = 'match-team match-team--away', scoreHtml;
+    if (hasResult) {
+      const draw = sc[0] === sc[1];
+      if (!draw) {
+        hClass += sc[0] > sc[1] ? ' is-winner' : ' is-loser';
+        aClass += sc[1] > sc[0] ? ' is-winner' : ' is-loser';
+      }
+      scoreHtml = `<span class="match-score">
+        <span class="live-score">${safeText(String(sc[0]))}</span>
         <span class="score-sep">–</span>
-        <span class="live-score">${scoreA}</span>
-      </span>
-      <span class="match-team match-team--away">${safeText(teams[ai].n)}</span>
+        <span class="live-score">${safeText(String(sc[1]))}</span>
+      </span>`;
+    } else {
+      scoreHtml = `<span class="match-score-vs">VS</span>`;
+    }
+
+    return `<div class="match-row${hasResult ? ' match-row--done' : ' match-row--pending'}">
+      <span class="match-row__date">${safeText(dateStr)}</span>
+      <span class="${hClass}">${safeText(th.f)} ${safeText(th.n)}</span>
+      ${scoreHtml}
+      <span class="${aClass}">${safeText(ta.f)} ${safeText(ta.n)}</span>
     </div>`;
   }).join('');
 }
