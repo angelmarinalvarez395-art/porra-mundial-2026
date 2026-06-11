@@ -261,6 +261,10 @@ async function main() {
 
     let home = m.score.fullTime.home;
     let away = m.score.fullTime.away;
+    if (home === null || away === null) {
+      console.warn(`⚠️  Score null para ${homeEs} vs ${awayEs}, ignorando`);
+      continue;
+    }
     if (entry.swapped) [home, away] = [away, home];
     newGS[entry.fbKey] = [home, away];
     console.log(`  GS ${entry.fbKey}: ${homeEs} ${home}-${away} ${awayEs}`);
