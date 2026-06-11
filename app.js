@@ -6,13 +6,13 @@
    console.firebase.google.com → Configuración del proyecto
    ==================================================== */
 const firebaseConfig = {
-  apiKey:            "REEMPLAZA_ESTO",
-  authDomain:        "REEMPLAZA_ESTO",
-  databaseURL:       "REEMPLAZA_ESTO",
-  projectId:         "REEMPLAZA_ESTO",
-  storageBucket:     "REEMPLAZA_ESTO",
-  messagingSenderId: "REEMPLAZA_ESTO",
-  appId:             "REEMPLAZA_ESTO",
+  apiKey:            "AIzaSyB_vPSZjZBtwAIa771ZxRHQLbpKzODxSEg",
+  authDomain:        "porra-mundial-2026-73278.firebaseapp.com",
+  databaseURL:       "https://porra-mundial-2026-73278-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:         "porra-mundial-2026-73278",
+  storageBucket:     "porra-mundial-2026-73278.firebasestorage.app",
+  messagingSenderId: "343896613895",
+  appId:             "1:343896613895:web:852095534519a898f6f6a2",
 };
 
 firebase.initializeApp(firebaseConfig);
