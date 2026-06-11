@@ -1,6 +1,36 @@
 'use strict';
 
 /* ====================================================
+   FIREBASE — sincronización en tiempo real
+   Reemplaza firebaseConfig con el tuyo de
+   console.firebase.google.com → Configuración del proyecto
+   ==================================================== */
+const firebaseConfig = {
+  apiKey:            "REEMPLAZA_ESTO",
+  authDomain:        "REEMPLAZA_ESTO",
+  databaseURL:       "REEMPLAZA_ESTO",
+  projectId:         "REEMPLAZA_ESTO",
+  storageBucket:     "REEMPLAZA_ESTO",
+  messagingSenderId: "REEMPLAZA_ESTO",
+  appId:             "REEMPLAZA_ESTO",
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const REF = {
+  entries:      db.ref('porra2026/entries'),
+  actual_gs:    db.ref('porra2026/actual_gs'),
+  actual_ko:    db.ref('porra2026/actual_ko'),
+  actual_bonus: db.ref('porra2026/actual_bonus'),
+};
+
+// Estado compartido en memoria — los listeners de Firebase lo mantienen actualizado
+let _entries     = [];
+let _actualGS    = {};
+let _actualKO    = {};
+let _actualBonus = null;
+
+/* ====================================================
    DATOS DEL MUNDIAL 2026
    ==================================================== */
 const WC_KICKOFF = new Date('2026-06-11T13:00:00-06:00'); // México vs Sudáfrica, Azteca
@@ -185,13 +215,10 @@ const BONUS_POINTS = { campeon:10, subcampeon:6, tercero:4, cuarto:2, goleador:6
 /* ====================================================
    ALMACENAMIENTO
    ==================================================== */
+// Solo el borrador local del usuario se guarda en localStorage
 const SK = {
-  DRAFT_GS:    'porra26-draft-gs',
-  DRAFT_KO:    'porra26-draft-ko',
-  ENTRIES:     'porra26-entries',
-  ACTUAL_GS:   'porra26-actual-gs',
-  ACTUAL_KO:   'porra26-actual-ko',
-  ACTUAL_BONUS:'porra26-actual-bonus',
+  DRAFT_GS: 'porra26-draft-gs',
+  DRAFT_KO: 'porra26-draft-ko',
 };
 
 function load(key, fallback) {
@@ -204,11 +231,51 @@ function getDraftGS()   { return load(SK.DRAFT_GS, {}); }
 function saveDraftGS(d) { save(SK.DRAFT_GS, d); }
 function getDraftKO()   { return load(SK.DRAFT_KO, {}); }
 function saveDraftKO(d) { save(SK.DRAFT_KO, d); }
-function getEntries()   { return load(SK.ENTRIES, []); }
-function saveEntries(e) { save(SK.ENTRIES, e); }
-function getActualGS()  { return load(SK.ACTUAL_GS, {}); }
-function getActualKO()  { return load(SK.ACTUAL_KO, {}); }
-function getActualBonus(){ return load(SK.ACTUAL_BONUS, null); }
+
+// Escrituras en Firebase (datos compartidos)
+function saveEntry(entry)    { return REF.entries.child(String(entry.id)).set(entry); }
+function deleteEntry(id)     { return REF.entries.child(String(id)).remove(); }
+function saveActualGS(d)     { return REF.actual_gs.set(d); }
+function saveActualKO(d)     { return REF.actual_ko.set(d); }
+function saveActualBonus(d)  { return REF.actual_bonus.set(d); }
+
+// Listeners en tiempo real — actualizan estado en memoria y re-renderizan
+function initFirebaseListeners() {
+  const isAdmin = new URLSearchParams(window.location.search).has('admin');
+
+  REF.entries.on('value', snap => {
+    const raw = snap.val() ?? {};
+    _entries = Object.values(raw);
+    renderLeaderboard();
+  });
+
+  REF.actual_gs.on('value', snap => {
+    _actualGS = snap.val() ?? {};
+    renderLeaderboard();
+    if (isAdmin) renderAdminGS();
+  });
+
+  REF.actual_ko.on('value', snap => {
+    _actualKO = snap.val() ?? {};
+    renderLeaderboard();
+    if (isAdmin) renderAdminKO();
+  });
+
+  REF.actual_bonus.on('value', snap => {
+    _actualBonus = snap.val();
+    renderLeaderboard();
+    if (isAdmin) populateAdminBonus();
+  });
+}
+
+function populateAdminBonus() {
+  const resultsForm = document.getElementById('results-form');
+  if (!resultsForm || !_actualBonus) return;
+  for (const [field, val] of Object.entries(_actualBonus)) {
+    const el = resultsForm.elements[field];
+    if (el) el.value = val;
+  }
+}
 
 /* ====================================================
    HELPER: FORMATO FECHA
@@ -613,9 +680,9 @@ function calcBonusPts(entry, bonusActual) {
 }
 
 function calcEntryPts(entry) {
-  const actualGS    = getActualGS();
-  const actualKO    = getActualKO();
-  const bonusActual = getActualBonus();
+  const actualGS    = _actualGS;
+  const actualKO    = _actualKO;
+  const bonusActual = _actualBonus;
   let gsPts = 0, koPts = 0;
 
   if (entry.draftGS) {
@@ -641,7 +708,7 @@ const lbTable = document.getElementById('lb-table');
 const lbBody  = document.getElementById('lb-body');
 
 function renderLeaderboard() {
-  const entries = getEntries();
+  const entries = _entries;
   if (entries.length === 0) { lbEmpty.hidden = false; lbTable.hidden = true; return; }
 
   const ranked = entries
@@ -668,8 +735,8 @@ function renderLeaderboard() {
 
   lbBody.querySelectorAll('.lb-del').forEach(btn => {
     btn.addEventListener('click', () => {
-      saveEntries(getEntries().filter(e => e.id !== Number(btn.dataset.id)));
-      renderLeaderboard();
+      deleteEntry(Number(btn.dataset.id));
+      // renderLeaderboard se llama automáticamente cuando Firebase confirma el borrado
     });
   });
 }
@@ -697,7 +764,7 @@ function escStr(str) { return str.replace(/"/g, '&quot;'); }
     nameErr.textContent = '';
   });
 
-  form.addEventListener('submit', e => {
+  form.addEventListener('submit', async e => {
     e.preventDefault();
     const nombre = nameInput.value.trim();
     if (!nombre) {
@@ -723,18 +790,16 @@ function escStr(str) { return str.replace(/"/g, '&quot;'); }
       draftKO:    getDraftKO(),
     };
 
-    const entries = getEntries();
-    const existing = entries.findIndex(ex => normalize(ex.nombre) === normalize(nombre));
-    if (existing >= 0) {
-      entries[existing] = entry;
+    const existing = _entries.find(ex => normalize(ex.nombre) === normalize(nombre));
+    if (existing) {
+      entry.id = existing.id; // reutiliza la misma clave en Firebase
       showToast('✅ Porra actualizada con tus predicciones actuales.');
     } else {
-      entries.push(entry);
       showToast('✅ ¡Porra guardada! Grupos, eliminatoria y bonus registrados.');
     }
 
-    saveEntries(entries);
-    renderLeaderboard();
+    await saveEntry(entry);
+    // renderLeaderboard se llama automáticamente por el listener de Firebase
     form.reset();
     document.getElementById('clasificacion').scrollIntoView({ behavior:'smooth', block:'start' });
   });
@@ -778,23 +843,16 @@ function escStr(str) { return str.replace(/"/g, '&quot;'); }
   renderAdminGS();
   renderAdminKO();
 
-  // Bonus form
+  // Bonus form — la pre-carga se hace en populateAdminBonus() cuando llega el snapshot de Firebase
   const resultsForm = document.getElementById('results-form');
-  const stored = getActualBonus();
-  if (stored) {
-    for (const [field, val] of Object.entries(stored)) {
-      const el = resultsForm.elements[field];
-      if (el) el.value = val;
-    }
-  }
 
   resultsForm.addEventListener('submit', e => {
     e.preventDefault();
     const data = Object.fromEntries(
       Object.keys(BONUS_POINTS).map(f => [f, resultsForm.elements[f]?.value.trim() ?? ''])
     );
-    save(SK.ACTUAL_BONUS, data);
-    renderLeaderboard();
+    saveActualBonus(data);
+    // renderLeaderboard se llama automáticamente por el listener de Firebase
     showAdminToast('✅ Bonus guardados. Puntuaciones actualizadas.');
   });
 })();
@@ -802,7 +860,7 @@ function escStr(str) { return str.replace(/"/g, '&quot;'); }
 function renderAdminGS() {
   const container = document.getElementById('admin-gs-content');
   if (!container) return;
-  const actual = getActualGS();
+  const actual = _actualGS;
 
   container.innerHTML = Object.entries(GROUPS).map(([gKey, g]) =>
     `<details style="margin-bottom:.6rem">
@@ -834,11 +892,11 @@ function renderAdminGS() {
 
   container.querySelectorAll('.admin-gs-inp').forEach(inp => {
     inp.addEventListener('change', () => {
-      const actual = getActualGS();
-      actual[inp.dataset.key] = actual[inp.dataset.key] ?? ['',''];
-      actual[inp.dataset.key][inp.dataset.side === 'h' ? 0 : 1] = inp.value;
-      save(SK.ACTUAL_GS, actual);
-      renderLeaderboard();
+      const updated = { ..._actualGS };
+      updated[inp.dataset.key] = [...(updated[inp.dataset.key] ?? ['',''])];
+      updated[inp.dataset.key][inp.dataset.side === 'h' ? 0 : 1] = inp.value;
+      saveActualGS(updated);
+      // renderLeaderboard y renderAdminGS se llaman automáticamente por el listener
       showAdminToast('✅ Resultado guardado. Clasificación actualizada.');
     });
   });
@@ -847,7 +905,7 @@ function renderAdminGS() {
 function renderAdminKO() {
   const container = document.getElementById('admin-ko-content');
   if (!container) return;
-  const actual = getActualKO();
+  const actual = _actualKO;
 
   const allMatches = KO_ORDER.flatMap(rk =>
     ROUNDS[rk].matches.map(m => ({ ...m, roundLabel: ROUNDS[rk].label }))
@@ -877,15 +935,15 @@ function renderAdminKO() {
   container.querySelectorAll('.admin-ko-save').forEach(btn => {
     btn.addEventListener('click', () => {
       const matchId = btn.dataset.match;
-      const actual  = getActualKO();
       const row     = btn.closest('.match-row');
-      actual[matchId] = {
+      const updated = { ..._actualKO };
+      updated[matchId] = {
         team: row.querySelector('.admin-ko-team').value.trim(),
         sh:   row.querySelector('.admin-ko-sh').value,
         sa:   row.querySelector('.admin-ko-sa').value,
       };
-      save(SK.ACTUAL_KO, actual);
-      renderLeaderboard();
+      saveActualKO(updated);
+      // renderLeaderboard y renderAdminKO se llaman automáticamente por el listener
       showAdminToast('✅ Resultado guardado. Puntuaciones recalculadas.');
     });
   });
@@ -970,4 +1028,4 @@ document.getElementById('btn-print')?.addEventListener('click', () => window.pri
    ==================================================== */
 initGroups();
 initKnockout();
-renderLeaderboard();
+initFirebaseListeners(); // Inicia la sincronización en tiempo real con Firebase
