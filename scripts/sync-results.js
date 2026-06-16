@@ -138,7 +138,15 @@ admin.initializeApp({
 const db = admin.database();
 
 // ── HELPERS ───────────────────────────────────────────────────────────────
-function toEs(name) { return TEAM_MAP[name] || name; }
+function toEs(name) {
+  if (TEAM_MAP[name]) return TEAM_MAP[name];
+  const keys = Object.keys(TEAM_MAP).sort((a, b) => b.length - a.length);
+  for (const key of keys) {
+    if (name.includes(key)) return TEAM_MAP[key];
+  }
+  console.warn(`⚠️  Nombre sin mapear: "${name}" — considera añadirlo a team-mapping.js`);
+  return name;
+}
 
 function calcStandings(gKey, gsData) {
   const teams = GROUPS[gKey].teams.map((t, i) => ({
@@ -197,10 +205,8 @@ function buildGSLookup() {
       const [hi, ai] = sched.pair;
       const homeEs = teams[hi].n;
       const awayEs = teams[ai].n;
-      // Direct order (pair[0] = home in our data)
-      lookup[`${sched.date}_${homeEs}_${awayEs}`] = { fbKey: `${gKey}-${mi}`, swapped: false };
-      // Reversed order (API might assign home/away differently)
-      lookup[`${sched.date}_${awayEs}_${homeEs}`] = { fbKey: `${gKey}-${mi}`, swapped: true };
+      lookup[`${homeEs}_${awayEs}`] = { fbKey: `${gKey}-${mi}`, swapped: false };
+      lookup[`${awayEs}_${homeEs}`] = { fbKey: `${gKey}-${mi}`, swapped: true };
     });
   }
   return lookup;
@@ -251,11 +257,10 @@ async function main() {
     if (m.stage !== 'GROUP_STAGE' || m.status !== 'FINISHED') continue;
     const homeEs = toEs(m.homeTeam.name);
     const awayEs = toEs(m.awayTeam.name);
-    const date   = m.utcDate.slice(0, 10);
-    const entry  = gsLookup[`${date}_${homeEs}_${awayEs}`];
+    const entry  = gsLookup[`${homeEs}_${awayEs}`];
 
     if (!entry) {
-      console.warn(`⚠️  Sin mapeo para ${homeEs} vs ${awayEs} (${date})`);
+      console.warn(`⚠️  Sin mapeo GS para ${homeEs} vs ${awayEs} (API: "${m.homeTeam.name}" vs "${m.awayTeam.name}")`);
       continue;
     }
 
