@@ -9,6 +9,7 @@ module.exports = {
   'South Korea':              'Corea del Sur',
   'Korea Republic':           'Corea del Sur',
   'Bosnia and Herzegovina':   'Bosnia-Herzegovina',
+  'Bosnia-Herzegovina':       'Bosnia-Herzegovina',
   'Canada':                   'Canadá',
   'Qatar':                    'Catar',
   'Switzerland':              'Suiza',
