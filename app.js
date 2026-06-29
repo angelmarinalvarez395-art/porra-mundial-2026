@@ -22,6 +22,7 @@ const REF = {
   actual_gs:    db.ref('porra2026/actual_gs'),
   actual_ko:    db.ref('porra2026/actual_ko'),
   actual_bonus: db.ref('porra2026/actual_bonus'),
+  mini_porras:  db.ref('porra2026/mini_porras'),
 };
 
 // Estado compartido en memoria — los listeners de Firebase lo mantienen actualizado
@@ -29,6 +30,7 @@ let _entries     = [];
 let _actualGS    = {};
 let _actualKO    = {};
 let _actualBonus = null;
+let _miniPorras  = {};
 
 /* ====================================================
    DATOS DEL MUNDIAL 2026
@@ -219,6 +221,7 @@ const BONUS_POINTS = { campeon:10, subcampeon:6, tercero:4, cuarto:2, goleador:6
 const SK = {
   DRAFT_GS: 'porra26-draft-gs',
   DRAFT_KO: 'porra26-draft-ko',
+  MP_DRAFT: 'porra26-mp-draft',
 };
 
 function load(key, fallback) {
@@ -231,6 +234,8 @@ function getDraftGS()   { return load(SK.DRAFT_GS, {}); }
 function saveDraftGS(d) { save(SK.DRAFT_GS, d); }
 function getDraftKO()   { return load(SK.DRAFT_KO, {}); }
 function saveDraftKO(d) { save(SK.DRAFT_KO, d); }
+function getMPDraft()   { return load(SK.MP_DRAFT, {}); }
+function saveMPDraft(d) { save(SK.MP_DRAFT, d); }
 
 // Escrituras en Firebase (datos compartidos)
 function saveEntry(entry)    { return REF.entries.child(String(entry.id)).set(entry); }
@@ -257,6 +262,7 @@ function initFirebaseListeners() {
     renderLiveGroups();
     renderLiveBracket();
     if (isAdmin) renderAdminGS();
+    renderMiniPorras();
   });
 
   REF.actual_ko.on('value', snap => {
@@ -266,6 +272,13 @@ function initFirebaseListeners() {
     const mpN = document.getElementById('mp-nombre')?.value.trim();
     if (mpN && document.getElementById('mp-content')?.children.length) renderMyPorra(mpN);
     if (isAdmin) renderAdminKO();
+    renderMiniPorras();
+  });
+
+  REF.mini_porras.on('value', snap => {
+    _miniPorras = snap.val() ?? {};
+    renderMiniPorras();
+    if (isAdmin) renderAdminMPControls();
   });
 
   REF.actual_bonus.on('value', snap => {
@@ -376,6 +389,50 @@ function resolveLoser(matchId, koPicks, qualifiers, best3) {
     const winnerText = `${pick.hf||''} ${pick.team}`.trim();
     if (teamH && teamH.trim() === winnerText) return teamA;
     return teamH;
+  }
+  return null;
+}
+
+/* ====================================================
+   MINI-PORRAS — RESOLUCIÓN DE EQUIPOS REALES
+   ==================================================== */
+const ALL_TEAMS_FLAG = (() => {
+  const map = {};
+  for (const g of Object.values(GROUPS)) for (const t of g.teams) map[t.n] = t.f;
+  return map;
+})();
+function getTeamFlag(name) { return ALL_TEAMS_FLAG[name] || ''; }
+
+function resolveActualSlot(slot) {
+  if (/^[12][A-L]$/.test(slot)) {
+    const standings  = getAllStandings(_actualGS);
+    const qualifiers = getQualifiers(standings);
+    const t = qualifiers[slot];
+    return t ? { n: t.n, f: t.f } : null;
+  }
+  if (/^3-\d+$/.test(slot)) {
+    const standings = getAllStandings(_actualGS);
+    const best3     = getBest3rds(standings);
+    const idx = parseInt(slot.split('-')[1], 10) - 1;
+    const t = best3[idx];
+    return t ? { n: t.n, f: t.f } : null;
+  }
+  const isLoser = slot.endsWith('-L');
+  const matchId = isLoser ? slot.slice(0, -2) : slot;
+  const result  = _actualKO[matchId];
+  if (!result?.team) return null;
+  if (!isLoser) return { n: result.team, f: getTeamFlag(result.team) };
+
+  // Loser: find which team from that match is NOT the winner
+  for (const round of Object.values(ROUNDS)) {
+    const m = round.matches.find(m => m.id === matchId);
+    if (!m) continue;
+    const tH = resolveActualSlot(m.h ?? m.p1);
+    const tA = resolveActualSlot(m.a ?? m.p2);
+    if (!tH || !tA) return null;
+    if (normalize(tH.n) === normalize(result.team)) return tA;
+    if (normalize(tA.n) === normalize(result.team)) return tH;
+    return null;
   }
   return null;
 }
@@ -1311,6 +1368,15 @@ function initMyPorra() {
   renderAdminGS();
   renderAdminKO();
 
+  // Mini-porras lock/unlock controls
+  const adminMPWrap = document.createElement('div');
+  adminMPWrap.innerHTML = `
+    <h4 class="admin-panel__title" style="margin-top:1.5rem">🎯 Mini-Porras — Control de Rondas</h4>
+    <p class="admin-panel__desc">Abre o cierra la ventana de predicciones de cada ronda eliminatoria.</p>
+    <div id="admin-mp-controls"></div>`;
+  panel.appendChild(adminMPWrap);
+  renderAdminMPControls();
+
   // Bonus form — la pre-carga se hace en populateAdminBonus() cuando llega el snapshot de Firebase
   const resultsForm = document.getElementById('results-form');
 
@@ -1420,6 +1486,257 @@ function renderAdminKO() {
   });
 }
 
+/* ====================================================
+   MINI-PORRAS — RENDER
+   ==================================================== */
+let _mpTabsInited = false;
+
+function renderMiniPorras() {
+  const tabNav = document.getElementById('mp-tab-nav');
+  const panels = document.getElementById('mp-panels');
+  if (!tabNav || !panels) return;
+
+  if (!_mpTabsInited) {
+    tabNav.innerHTML = KO_ORDER.map((k, i) =>
+      `<button class="phase-tab" role="tab" aria-selected="${i === 0}" data-round="${k}">
+         ${ROUNDS[k].label}
+       </button>`
+    ).join('');
+    panels.innerHTML = KO_ORDER.map((k, i) =>
+      `<div id="mp-panel-${k}" role="tabpanel" ${i !== 0 ? 'hidden' : ''}></div>`
+    ).join('');
+    tabNav.addEventListener('click', e => {
+      const tab = e.target.closest('.phase-tab');
+      if (!tab) return;
+      tabNav.querySelectorAll('.phase-tab').forEach(t => t.setAttribute('aria-selected', 'false'));
+      tab.setAttribute('aria-selected', 'true');
+      panels.querySelectorAll('[role="tabpanel"]').forEach(p => { p.hidden = true; });
+      document.getElementById(`mp-panel-${tab.dataset.round}`).hidden = false;
+    });
+    _mpTabsInited = true;
+  }
+
+  KO_ORDER.forEach(roundKey => {
+    const panel = document.getElementById(`mp-panel-${roundKey}`);
+    if (panel) renderMiniRound(roundKey, panel);
+  });
+}
+
+function renderMiniRound(roundKey, panel) {
+  const roundData = _miniPorras[roundKey] ?? {};
+  const locked    = roundData.locked === true;
+  const entries   = roundData.entries ?? {};
+  const matches   = ROUNDS[roundKey].matches;
+
+  const resolvedTeams = {};
+  let allTeamsKnown = true;
+  for (const m of matches) {
+    const slotH = m.h ?? m.p1;
+    const slotA = m.a ?? m.p2;
+    const tH = resolveActualSlot(slotH);
+    const tA = resolveActualSlot(slotA);
+    resolvedTeams[m.id] = { h: tH, a: tA };
+    if (!tH || !tA) allTeamsKnown = false;
+  }
+
+  const myName       = localStorage.getItem('porra26-mi-nombre') || '';
+  const myNormalized = normalize(myName);
+  const myEntry      = Object.values(entries).find(e => normalize(e.nombre) === myNormalized);
+  const draft        = getMPDraft();
+  const myDraft      = draft[roundKey] ?? {};
+
+  let html = `<div class="mp-status ${locked ? 'mp-status--closed' : 'mp-status--open'}">
+    ${locked ? '🔒 Ronda cerrada' : '🟢 Ronda abierta'}
+  </div>`;
+
+  if (!locked && allTeamsKnown && !myEntry) {
+    html += `<div class="mp-entry-form">
+      <div class="form-group" style="max-width:320px;margin-bottom:1rem">
+        <label class="form-label" for="mp-name-${roundKey}">Tu nombre</label>
+        <input type="text" id="mp-name-${roundKey}" class="form-input"
+          value="${escStr(myName)}" placeholder="Escribe tu nombre o alias" autocomplete="off">
+      </div>
+      <div class="mp-matches">`;
+    for (const m of matches) {
+      const { h, a } = resolvedTeams[m.id];
+      const pick = myDraft[m.id];
+      const pickedH = pick?.team && normalize(pick.team) === normalize(h.n);
+      const pickedA = pick?.team && normalize(pick.team) === normalize(a.n);
+      const dl = m.date ? `<span class="mp-match-date">${formatDate(m.date)}</span>` : '';
+      html += `<div class="mp-match" data-match="${m.id}">
+        ${dl}
+        <div class="mp-match__teams">
+          <button class="ko-pick${pickedH ? ' is-winner' : ''}"
+            data-match="${m.id}" data-team="${escStr(h.n)}" data-round="${roundKey}">
+            ${h.f} ${safeText(h.n)}
+          </button>
+          <div class="ko-match__mid">
+            <span class="ko-vs">VS</span>
+            <div class="ko-score-row">
+              <input class="ko-score-inp mp-score-inp" type="number" min="0" max="20"
+                data-match="${m.id}" data-side="h" data-round="${roundKey}"
+                value="${escStr(pick?.sh ?? '')}" placeholder="–">
+              <span class="score-sep">–</span>
+              <input class="ko-score-inp mp-score-inp" type="number" min="0" max="20"
+                data-match="${m.id}" data-side="a" data-round="${roundKey}"
+                value="${escStr(pick?.sa ?? '')}" placeholder="–">
+            </div>
+          </div>
+          <button class="ko-pick${pickedA ? ' is-winner' : ''}"
+            data-match="${m.id}" data-team="${escStr(a.n)}" data-round="${roundKey}">
+            ${a.f} ${safeText(a.n)}
+          </button>
+        </div>
+      </div>`;
+    }
+    html += `</div>
+      <button class="btn btn--primary mp-submit" data-round="${roundKey}" style="margin-top:1.5rem">
+        Enviar predicciones — ${ROUNDS[roundKey].label}
+      </button>
+    </div>`;
+  } else if (!allTeamsKnown && !locked) {
+    html += `<p class="mp-waiting">Los equipos de esta ronda aún no se conocen. Vuelve cuando estén definidos los clasificados.</p>`;
+  }
+
+  if (myEntry) {
+    const myPicks = myEntry.picks ?? {};
+    const totalPts = Object.entries(myPicks).reduce((sum, [mid, pick]) => {
+      const real = _actualKO[mid];
+      return real?.team ? sum + calcPtsKO(pick.team, pick.sh, pick.sa, real.team, real.sh, real.sa) : sum;
+    }, 0);
+    html += `<div class="mp-my-picks">
+      <h4 style="margin-bottom:.75rem">Tus predicciones</h4>
+      <div class="mp-picks-list">`;
+    for (const m of matches) {
+      const pick = myPicks[m.id];
+      const real = _actualKO[m.id];
+      const pts  = pick?.team && real?.team ? calcPtsKO(pick.team, pick.sh, pick.sa, real.team, real.sh, real.sa) : null;
+      const { h, a } = resolvedTeams[m.id] ?? {};
+      const homeDisp = h ? `${h.f} ${h.n}` : '?';
+      const awayDisp = a ? `${a.f} ${a.n}` : '?';
+      const predText = pick?.team ? `${getTeamFlag(pick.team)} ${safeText(pick.team)}${pick.sh !== '' && pick.sa !== '' && pick.sh != null ? ` (${pick.sh}-${pick.sa})` : ''}` : '—';
+      const realText = real?.team ? `${getTeamFlag(real.team)} ${safeText(real.team)}${real.sh !== '' && real.sa !== '' ? ` (${real.sh}-${real.sa})` : ''}` : '';
+      const rowClass = pts !== null ? (pts > 0 ? 'mp-pick-row--hit' : 'mp-pick-row--miss') : '';
+      html += `<div class="mp-pick-row ${rowClass}" title="${homeDisp} vs ${awayDisp}">
+        <span>${predText}</span>
+        ${realText ? `<span class="mp-real">Real: ${realText}</span>` : ''}
+        ${pts !== null ? `<span class="mp-pts">${pts} pts</span>` : ''}
+      </div>`;
+    }
+    html += `</div><p class="mp-total-pts">Total esta ronda: <strong>${totalPts} pts</strong></p></div>`;
+  }
+
+  if (Object.keys(entries).length > 0) {
+    const ranked = Object.values(entries).map(e => ({
+      nombre: e.nombre,
+      pts: Object.entries(e.picks ?? {}).reduce((sum, [mid, pick]) => {
+        const real = _actualKO[mid];
+        return real?.team ? sum + calcPtsKO(pick.team, pick.sh, pick.sa, real.team, real.sh, real.sa) : sum;
+      }, 0),
+    })).sort((a, b) => b.pts - a.pts);
+
+    html += `<div class="mp-ranking">
+      <h4 style="margin-bottom:.75rem">Mini-Clasificación — ${ROUNDS[roundKey].label}</h4>
+      <table class="lb-table" aria-label="Mini-clasificación ${ROUNDS[roundKey].label}">
+        <thead><tr><th scope="col">#</th><th scope="col" style="text-align:left">Participante</th><th scope="col">Puntos</th></tr></thead>
+        <tbody>${ranked.map((e, i) => `<tr>
+          <td>${i + 1}</td>
+          <td><strong>${safeText(e.nombre)}</strong></td>
+          <td><span class="lb-pts">${e.pts} pts</span></td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+  }
+
+  panel.innerHTML = html;
+
+  // Team pick buttons
+  panel.querySelectorAll('.ko-pick').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const matchId = btn.dataset.match;
+      const roundK  = btn.dataset.round;
+      const team    = btn.dataset.team;
+      const d = getMPDraft();
+      if (!d[roundK]) d[roundK] = {};
+      if (!d[roundK][matchId]) d[roundK][matchId] = { team: '', sh: '', sa: '' };
+      d[roundK][matchId].team = team;
+      saveMPDraft(d);
+      const matchDiv = panel.querySelector(`.mp-match[data-match="${matchId}"]`);
+      matchDiv?.querySelectorAll('.ko-pick').forEach(b => {
+        b.classList.toggle('is-winner', b.dataset.team === team);
+      });
+    });
+  });
+
+  // Score inputs
+  panel.querySelectorAll('.mp-score-inp').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const matchId = inp.dataset.match;
+      const roundK  = inp.dataset.round;
+      const side    = inp.dataset.side === 'h' ? 'sh' : 'sa';
+      const d = getMPDraft();
+      if (!d[roundK]) d[roundK] = {};
+      if (!d[roundK][matchId]) d[roundK][matchId] = { team: '', sh: '', sa: '' };
+      d[roundK][matchId][side] = inp.value;
+      saveMPDraft(d);
+    });
+  });
+
+  // Submit
+  panel.querySelector('.mp-submit')?.addEventListener('click', async () => {
+    const rk        = panel.querySelector('.mp-submit').dataset.round;
+    const nameInput = document.getElementById(`mp-name-${rk}`);
+    const nombre    = nameInput?.value.trim();
+    if (!nombre) { nameInput?.focus(); return; }
+    const d     = getMPDraft();
+    const picks = d[rk] ?? {};
+    await REF.mini_porras.child(rk).child('entries').child(normalize(nombre)).set({ nombre, picks, ts: Date.now() });
+    localStorage.setItem('porra26-mi-nombre', nombre);
+    showMiniToast('✅ Mini-porra enviada. ¡Suerte!');
+  });
+}
+
+function showMiniToast(msg) {
+  let t = document.getElementById('mini-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'mini-toast';
+    t.className = 'form-toast';
+    t.style.cssText = 'position:fixed;bottom:1.5rem;left:1.5rem;z-index:999;max-width:360px';
+    document.body.appendChild(t);
+  }
+  t.innerHTML = `<span>✅</span><p>${safeText(msg)}</p>`;
+  t.hidden = false;
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.hidden = true; }, 4000);
+}
+
+/* ====================================================
+   MINI-PORRAS — ADMIN: CONTROL DE RONDAS
+   ==================================================== */
+function renderAdminMPControls() {
+  const container = document.getElementById('admin-mp-controls');
+  if (!container) return;
+
+  container.innerHTML = `<div class="mp-admin-controls">${KO_ORDER.map(rk => {
+    const locked = _miniPorras[rk]?.locked === true;
+    const count  = Object.keys(_miniPorras[rk]?.entries ?? {}).length;
+    return `<div class="mp-admin-row">
+      <span>${ROUNDS[rk].label} <small style="color:var(--c-text-2)">${count} predicciones</small></span>
+      <button class="btn btn--secondary mp-lock-btn" data-round="${rk}" data-locked="${locked}">
+        ${locked ? '🔓 Abrir' : '🔒 Cerrar'}
+      </button>
+    </div>`;
+  }).join('')}</div>`;
+
+  container.querySelectorAll('.mp-lock-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const newLocked = btn.dataset.locked !== 'true';
+      REF.mini_porras.child(btn.dataset.round).child('locked').set(newLocked);
+    });
+  });
+}
+
 function showAdminToast(msg) {
   let t = document.getElementById('admin-toast');
   if (!t) {
@@ -1502,4 +1819,5 @@ initKnockout();
 initParticipaSteps();
 initPanelTabs();
 initMyPorra();
+renderMiniPorras();
 initFirebaseListeners(); // Inicia la sincronización en tiempo real con Firebase
