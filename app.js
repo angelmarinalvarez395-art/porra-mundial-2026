@@ -1352,19 +1352,22 @@ function renderAdminGS() {
                 style="background:var(--c-bg-alt)" inputmode="numeric">
             </div>
             <span class="match-team match-team--away" style="font-size:.82rem">${ta.n} ${ta.f}</span>
+            <button class="btn btn--secondary admin-gs-save" data-key="${key}"
+              style="padding:.4rem .9rem;font-size:.82rem">Guardar</button>
           </div>`;
         }).join('')}
       </div>
     </details>`
   ).join('');
 
-  container.querySelectorAll('.admin-gs-inp').forEach(inp => {
-    inp.addEventListener('change', () => {
+  container.querySelectorAll('.admin-gs-save').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.key;
+      const hVal = container.querySelector(`.admin-gs-inp[data-key="${key}"][data-side="h"]`).value;
+      const aVal = container.querySelector(`.admin-gs-inp[data-key="${key}"][data-side="a"]`).value;
       const updated = { ..._actualGS };
-      updated[inp.dataset.key] = [...(updated[inp.dataset.key] ?? ['',''])];
-      updated[inp.dataset.key][inp.dataset.side === 'h' ? 0 : 1] = inp.value;
+      updated[key] = [hVal, aVal];
       saveActualGS(updated);
-      // renderLeaderboard y renderAdminGS se llaman automáticamente por el listener
       showAdminToast('✅ Resultado guardado. Clasificación actualizada.');
     });
   });
